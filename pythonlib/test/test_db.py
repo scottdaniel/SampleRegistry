@@ -56,7 +56,6 @@ class CoreDbTests(unittest.TestCase):
             for k, v in self.annotations.items():
                 annotation_triples.append((acc, k, v))
         self.db.register_annotations(annotation_triples)
-        print sample_accessions
         self.db.remove_annotations(sample_accessions)
         for acc in sample_accessions:
             obs_annotations = self.db.query_sample_annotations(acc)

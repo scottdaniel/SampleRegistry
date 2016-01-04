@@ -1,5 +1,5 @@
 import collections
-from cStringIO import StringIO
+import io
 import unittest
 
 from sample_registry.util import (
@@ -44,14 +44,14 @@ class UtilTests(unittest.TestCase):
             local_filepath("/abc/def", None, "/jhsdf"), "/abc/def")
 
     def test_parse_fasta(self):
-        obs = parse_fasta(StringIO(fasta1))
+        obs = parse_fasta(io.StringIO(fasta1))
         self.assertEqual(next(obs), ("seq1 hello", "ACGTGGGTTAA"))
         self.assertEqual(next(obs), ("seq 2", "GTTCCGAAA"))
         self.assertEqual(next(obs), ("seq3", ""))
         self.assertRaises(StopIteration, next, obs)
 
     def test_parse_fastq(self):
-        obs = parse_fastq(StringIO(fastq1))
+        obs = parse_fastq(io.StringIO(fastq1))
         self.assertEqual(next(obs), (
             "YesYes", "AGGGCCTTGGTGGTTAG", ";234690GSDF092384"))
         self.assertEqual(next(obs), (
@@ -72,7 +72,7 @@ class UtilTests(unittest.TestCase):
         self.assertRaises(KeyError, reverse_complement, "ANCC")
 
 
-fasta1 = """\
+fasta1 = u"""\
 >seq1 hello
 ACGTGG
 GTTAA
@@ -83,7 +83,7 @@ GAAA
 >seq3
 """
 
-fastq1 = """\
+fastq1 = u"""\
 @YesYes
 AGGGCCTTGGTGGTTAG
 +

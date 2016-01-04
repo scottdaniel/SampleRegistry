@@ -1,7 +1,13 @@
 import collections
-from cStringIO import StringIO
+import io
 import itertools
 import os
+
+try:
+    import itertools.izip as zip
+except ImportError:
+    pass
+
 
 def key_by_attr(objs, attr):
     # Cannot use set() here, because objects might not be hashable.
@@ -31,14 +37,14 @@ def local_filepath(data_fp, local_mount, remote_mount):
 
 def parse_fasta(f):
     f = iter(f)
-    desc = f.next().strip()[1:]
-    seq = StringIO()
+    desc = next(f).strip()[1:]
+    seq = io.StringIO()
     for line in f:
         line = line.strip()
         if line.startswith(">"):
             yield desc, seq.getvalue()
             desc = line[1:]
-            seq = StringIO()
+            seq = io.StringIO()
         else:
             seq.write(line)
     yield desc, seq.getvalue()
@@ -48,7 +54,7 @@ def _grouper(iterable, n):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3) --> ABC DEF
     args = [iter(iterable)] * n
-    return itertools.izip(*args)
+    return zip(*args)
 
 
 def parse_fastq(f):

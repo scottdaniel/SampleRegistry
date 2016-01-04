@@ -1,7 +1,7 @@
 """Parse, create, and validate QIIME-style mapping files."""
 
+import io
 import string
-from cStringIO import StringIO
 
 NAs = set([
     "", "0000-00-00", "null", "Null", "NA", "na", "none", "None",
@@ -28,30 +28,30 @@ QIIME_FIELDS = (
 
 def create(run, samples, annotations):
     """Create a QIIME mapping file."""
-    buff = StringIO()
+    buff = io.StringIO()
 
     qiime_fields = [x for x, _ in QIIME_FIELDS]
     annotation_fields, annotation_rows = _cast(samples, annotations)
 
     # Header line
     fields = qiime_fields + annotation_fields + ["Description"]
-    buff.write("#")
-    buff.write("\t".join(fields))
-    buff.write("\n")
+    buff.write(u"#")
+    buff.write(u"\t".join(fields))
+    buff.write(u"\n")
 
     # Comments
-    buff.write("#%s\n" % run.comment)
-    buff.write("#Sequencing date: %s\n" % run.date)
-    buff.write("#Region: %s\n" % run.region)
-    buff.write("#Platform: %s\n" % run.platform)
-    buff.write("#Bushman lab run accession: %s\n" % run.formatted_accession)
+    buff.write(u"#%s\n" % run.comment)
+    buff.write(u"#Sequencing date: %s\n" % run.date)
+    buff.write(u"#Region: %s\n" % run.region)
+    buff.write(u"#Platform: %s\n" % run.platform)
+    buff.write(u"#Bushman lab run accession: %s\n" % run.formatted_accession)
 
     # Values
     for s, annotation_row in zip(samples, annotation_rows):
         sample_row = [s.name, s.barcode, s.primer]
         vals = sample_row + annotation_row + [s.formatted_accession]
-        buff.write("\t".join(vals))
-        buff.write("\n")
+        buff.write(u"\t".join(vals))
+        buff.write(u"\n")
 
     return buff.getvalue()
 

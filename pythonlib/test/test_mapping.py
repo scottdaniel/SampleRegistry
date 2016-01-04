@@ -85,7 +85,7 @@ class FunctionTests(unittest.TestCase):
             )
 
 
-MAPPING_TEXT = """\
+MAPPING_TEXT = u"""\
 #SampleID	BarcodeSequence	LinkerPrimerSequence	HostSpecies	SubjectID	Description
 #Comment
 #Sequencing date: 2012-01-01
