@@ -3,12 +3,13 @@
 import logging
 import argparse
 import os
+import sys
 
 from sample_registry import db, mapping, models
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-CORE = db.CoreDb(this_dir + "/../../website/core.db")
+CORE = db.CoreDb(THIS_DIR + "/../../website/core.db")
 
 
 COMMON_DESC = """\
@@ -117,30 +118,39 @@ def register_sample_annotations(argv=None, register_samples=False, coredb=None):
     coredb.register_annotations(annotation_args)
 
 
-def register_run(argv=None, coredb=None):
+def register_run(argv=None, coredb=None, out=sys.stdout):
     if coredb is None:
         coredb = CORE
 
-    p = optparse.OptionParser(description="Register a new run in the CORE database.")
-    p.add_option("--file", help="Resource filepath (not checked for validity) [REQUIRED]")
-    p.add_option("--date", help="Run date (YYYY-MM-DD) [REQUIRED]")
-    p.add_option("--comment", help="Comment (free text) [REQUIRED]")
-    p.add_option("--type", default="Immulina-MiSeq",
-        help=("Machine type (choices: Illumina-MiSeq, "
-              "Illumina-HiSeq) [default: %default]"))
-    p.add_option("--kit", default="Nextera XT",
-        help="Machine kit (choices: Nextera XT) [default: %default]")
-    p.add_option("--lane", default="1",
-        help="Lane number [default: %default]")
-    opts, args = p.parse_args()
+    machines = [
+        "Illumina-MiSeq",
+        "Illumina-HiSeq",
+    ]
+    kits = [
+        "Nextera XT"
+    ]
 
-    required_opts = ["file", "date", "comment"]
-    missing_opts = [x for x in required_opts if getattr(opts, x) is None]
-    if missing_opts:
-        p.error("Missing options: %s" % missing_opts)
-
-    real_fp = os.path.realpath(opts.file)
+    p = argparse.ArgumentParser(
+        description="Register a new run in the CORE database.")
+    p.add_argument(
+        "--file", required=True,
+        help="Resource filepath (not checked for validity)")
+    p.add_argument(
+        "--date", required=True,
+        help="Run date (YYYY-MM-DD)")
+    p.add_argument(
+        "--comment", required=True,
+        help="Comment (free text)")
+    p.add_argument(
+        "--type", default="Immulina-MiSeq", choices=machines,
+        help="Machine type")
+    p.add_argument(
+        "--kit", default="Nextera XT", choices=kits,
+        help="Machine kit")
+    p.add_argument("--lane", default="1",
+        help="Lane number")
+    args = p.parse_args(argv)
 
     acc = coredb.register_run(
-        opts.date, opts.type, opts.kit, opts.lane, real_fp, opts.comment)
-    print "Registered run %s in CORE database" % acc
+        args.date, args.type, args.kit, args.lane, args.file, args.comment)
+    out.write(u"Registered run %s in CORE database\n" % acc)
