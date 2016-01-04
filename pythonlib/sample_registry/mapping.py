@@ -16,17 +16,37 @@ ALLOWED_CHARS = {
 
 
 SAMPLE_FIELDS = (
-    "sample_name", "barcode_sequence", "primer_sequence")
+    "sample_name", "barcode_sequence")
 
 
 QIIME_FIELDS = (
     ("SampleID", "sample_name"),
     ("BarcodeSequence", "barcode_sequence"),
-    ("LinkerPrimerSequence", "primer_sequence"),
     )
 
 
-def create(run, samples, annotations):
+def create(f, samples):
+    samples = list(samples)
+
+    column_names = ["sample_name", "barcode_sequence"]
+    for s in samples:
+        for key in sorted(s.keys()):
+            if key not in column_names:
+                column_names.append(key)
+    line = u"\t".join(column_names)
+    f.write(line)
+    f.write(u"\n")
+
+    for s in samples:
+        row = ["NA" for c in column_names]
+        for key, val in s.items():
+            idx = column_names.index(key)
+            row[idx] = val
+        f.write(u"\t".join(row))
+        f.write(u"\n")
+
+
+def create_qiime(run, samples, annotations):
     """Create a QIIME mapping file."""
     buff = io.StringIO()
 
@@ -129,21 +149,20 @@ def convert_from_qiime(recs):
         yield r
 
 
-
-
 def validate(recs):
     """Ensure records are valid.
 
     Does not return a value, but raises an exception on an invalid record.
     """
     sample_names = set()
-    bc_primers = set()
+    barcodes = set()
 
     for r in recs:
         for key, char_set in ALLOWED_CHARS.items():
-            val = r[key]
-            if not all(char in char_set for char in val):
-                raise ValueError("Illegal characters in %s: %s" % (key, r))
+            if key in r:
+                val = r[key]
+                if not all(char in char_set for char in val):
+                    raise ValueError("Illegal characters in %s: %s" % (key, r))
 
         name = r.get("sample_name")
         if name is None:
@@ -152,17 +171,17 @@ def validate(recs):
             raise ValueError("Duplicate sample_name: %s" % r)
         sample_names.add(name)
 
-        bc_primer = r.get("barcode_sequence", "") + r.get("primer_sequence", "")
-        if bc_primer in bc_primers:
-            raise ValueError("Duplicate barcode+primer: %s" % r)
-        bc_primers.add(bc_primer)
+        barcode = r.get("barcode_sequence", "")
+        if barcode in barcodes:
+            raise ValueError("Duplicate barcode: %s" % r)
+        barcodes.add(barcode)
 
 
 def split_annotations(recs):
     """Extract core sample info from records.
 
     Yields a tuple for each record.  First element contains core
-    sample fields: (name, barcode, primer, linker).  Second element is a list
+    sample fields: (name, barcode).  Second element is a list
     of annotation key, value pairs: [(annot_key, annot_val), ...]
     """
     for r in recs:

@@ -70,7 +70,8 @@ def register_annotations_script():
     return register_annotations_script(None, False)
 
 
-def register_sample_annotations(argv=None, register_samples=False, coredb=None):
+def register_sample_annotations(
+        argv=None, register_samples=False, coredb=None, out=sys.stdout):
     if coredb is None:
         coredb = CORE
 
@@ -79,11 +80,11 @@ def register_sample_annotations(argv=None, register_samples=False, coredb=None):
     else:
         p = argparse.ArgumentParser(
             description=ANNOTATIONS_DESC, epilog=ANNOTATIONS_EPILOG)
-    p.add_option(
+    p.add_argument(
         "-r", "--run_accession",
         type=int, required=True,
         help="Run accession")
-    p.add_option(
+    p.add_argument(
         "-s", "--sample_info_file",
         type=argparse.FileType('r'), required=True,
         help="Sample table in TSV format")
@@ -97,11 +98,11 @@ def register_sample_annotations(argv=None, register_samples=False, coredb=None):
     samples, annotations = zip(*list(mapping.split_annotations(recs)))
 
     # Check for run
-    if not coredb.query_run_exists(opts.run_accession):
-        raise ValueError("Run does not exist %s" % opts.run_accession)
+    if not coredb.query_run_exists(args.run_accession):
+        raise ValueError("Run does not exist %s" % args.run_accession)
 
     # Register and search for samples
-    sample_args = [(opts.run_accession, n, b) for n, b in samples]
+    sample_args = [(args.run_accession, n, b) for n, b in samples]
     if register_samples:
         coredb.register_samples(sample_args)
     accessions = coredb.query_sample_accessions(sample_args)
