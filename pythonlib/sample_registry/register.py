@@ -60,7 +60,19 @@ you will be restoring database tables with Time Machine, as you deserve.
 You have been warned!!!
 """
 
-def register_sample_annotations(argv=None, register_samples=False):
+
+def register_samples_script():
+    return register_sample_annotations(None, True)
+
+
+def register_annotations_script():
+    return register_annotations_script(None, False)
+
+
+def register_sample_annotations(argv=None, register_samples=False, coredb=None):
+    if coredb is None:
+        coredb = CORE
+
     if register_samples:
         p = argparse.ArgumentParser(description=SAMPLES_DESC)
     else:
@@ -84,14 +96,14 @@ def register_sample_annotations(argv=None, register_samples=False):
     samples, annotations = zip(*list(mapping.split_annotations(recs)))
 
     # Check for run
-    if not CORE.query_run_exists(opts.run_accession):
+    if not coredb.query_run_exists(opts.run_accession):
         raise ValueError("Run does not exist %s" % opts.run_accession)
 
     # Register and search for samples
     sample_args = [(opts.run_accession, n, b) for n, b in samples]
     if register_samples:
-        CORE.register_samples(sample_args)
-    accessions = CORE.query_sample_accessions(sample_args)
+        coredb.register_samples(sample_args)
+    accessions = coredb.query_sample_accessions(sample_args)
     unaccessioned = [s for a, s in zip(accessions, samples) if a is None]
     if any(unaccessioned):
         raise IOError("Not accessioned: %s" % unaccessioned)
@@ -101,11 +113,14 @@ def register_sample_annotations(argv=None, register_samples=False):
     for a, pairs in zip(accessions, annotations):
         for k, v in pairs:
             annotation_args.append((a, k, v))
-    CORE.remove_annotations(accessions)
-    CORE.register_annotations(annotation_args)
+    coredb.remove_annotations(accessions)
+    coredb.register_annotations(annotation_args)
 
 
-def register_run(argv=None):
+def register_run(argv=None, coredb=None):
+    if coredb is None:
+        coredb = CORE
+
     p = optparse.OptionParser(description="Register a new run in the CORE database.")
     p.add_option("--file", help="Resource filepath (not checked for validity) [REQUIRED]")
     p.add_option("--date", help="Run date (YYYY-MM-DD) [REQUIRED]")
@@ -126,6 +141,6 @@ def register_run(argv=None):
 
     real_fp = os.path.realpath(opts.file)
 
-    acc = CORE.register_run(
+    acc = coredb.register_run(
         opts.date, opts.type, opts.kit, opts.lane, real_fp, opts.comment)
     print "Registered run %s in CORE database" % acc
