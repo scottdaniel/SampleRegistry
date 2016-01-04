@@ -153,4 +153,4 @@ def register_run(argv=None, coredb=None, out=sys.stdout):
 
     acc = coredb.register_run(
         args.date, args.type, args.kit, args.lane, args.file, args.comment)
-    out.write(u"Registered run %s in CORE database\n" % acc)
+    out.write(u"Registered run %s in the database\n" % acc)

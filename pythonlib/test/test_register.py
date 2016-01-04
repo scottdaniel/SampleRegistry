@@ -20,7 +20,14 @@ class RegisterRunTests(unittest.TestCase):
         ]
         out = io.StringIO()
         register_run(args, self.db, out)
+
+        # Check that accession number is printed
         self.assertEqual(
             out.getvalue(),
-            "Registered run 1 in CORE database\n"
+            "Registered run 1 in the database\n"
         )
+
+        # Check that correct values were saved in the database
+        self.assertEqual(self.db._query_run(1), (
+            u'2008-09-21', u'Illumina-MiSeq', u'Nextera XT', 1,
+            u'abc', u'mdsnfa adsf'))
