@@ -1,7 +1,6 @@
 <?php
 
 require_once 'lib/limonade.php';
-require_once 'lib/markdown.php';
 require_once 'lib/models.php';
 require_once 'lib/util.php';
 
