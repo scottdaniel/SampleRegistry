@@ -62,11 +62,11 @@ You have been warned!!!
 """
 
 
-def register_samples_script():
+def register_samples():
     return register_sample_annotations(None, True)
 
 
-def register_annotations_script():
+def register_annotations():
     return register_annotations_script(None, False)
 
 

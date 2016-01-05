@@ -13,6 +13,8 @@ setup(
     packages=['sample_registry'],
     entry_points = {'console_scripts': [
         'register_run = sample_registry.register:register_run',
+        'register_samples = sample_registry.register:register_samples',
+        'register_annotations = sample_registry.register:register_annotations',
         ]},
     )
 
