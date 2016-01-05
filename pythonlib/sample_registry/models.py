@@ -4,8 +4,11 @@ import os.path
 from sample_registry.util import deambiguate
 
 
+ACCESSION_PREFIX = "PCMP"
+
+
 class Sample(object):
-    def __init__(self, accession, name, barcode, primer, run):
+    def __init__(self, accession, name, barcode, run):
         self.accession = accession
         self.name = name
 
@@ -13,20 +16,18 @@ class Sample(object):
         if self.barcode is not None:
             self.barcode = self.barcode.upper()
 
-        self.primer = primer
-        if self.primer is not None:
-            self.primer = self.primer.upper()
-
         self.run = run
+
+    def as_dict(self):
+        return {
+            "accession": self.formatted_accession,
+            "sample_name": self.name,
+            "barcode_sequence": self.barcode,
+        }
 
     @property
     def formatted_accession(self):
-        return "BLS%06d" % self.accession
-
-    @property
-    def prefixes(self):
-        """Returns all non-degenerate versions of a given primer sequence """
-        return [self.barcode + p for p in deambiguate(self.primer)]
+        return "%s%06d" % (ACCESSION_PREFIX, self.accession)
 
 
 class Run(object):
@@ -66,17 +67,10 @@ class Run(object):
     
     @property
     def formatted_accession(self):
-        return "BLR%06d" % self.accession
+        return "%s%06d" % (ACCESSION_PREFIX, self.accession)
 
     @property
     def platform(self):
         return "%s %s" % (self.machine_type, self.machine_kit)
-
-    @property
-    def prefix(self):
-        if self.fp.endswith(".sff"):
-            fn = os.path.basename(self.fp)
-            return fn[:-6] # runprefix01.sff, remove 6 chars from end
-        return ""
 
 

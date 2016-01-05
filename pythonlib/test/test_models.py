@@ -10,9 +10,9 @@ from sample_registry.models import (
 
 
 class SampleTests(unittest.TestCase):
-    def test_prefixes(self):
-        s = Sample(1, "a", "AGCT", "AY", 123)
-        self.assertEqual(sorted(s.prefixes), ["AGCTAC", "AGCTAT"])
+    def test_init(self):
+        s = Sample(1, "a", "agct", 123)
+        self.assertEqual(s.barcode, "AGCT")
 
 
 class RunTests(unittest.TestCase):
