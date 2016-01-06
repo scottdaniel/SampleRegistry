@@ -18,7 +18,7 @@
   <body>
     <div class="container">
       <div class="header span-16">
-	    <h1><a href="<?= url_for() ?>">CHOP Microbiome Center sample registry</a></h1>
+	    <h1><a href="<?= url_for() ?>">CHOP Microbiome Center<br>Sample Registry</a></h1>
 	    <ul>
           <li><a href="<?= url_for('runs') ?>">Runs</a></li>
           <li><a href="<?= url_for('tags') ?>">Metadata</a></li>
