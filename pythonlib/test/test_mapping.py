@@ -2,7 +2,9 @@ from collections import namedtuple
 import io
 import unittest
 
-from sample_registry import mapping 
+from sample_registry.mapping import (
+    SampleTable, QiimeSampleTable, validate, create, create_qiime,
+)
 from sample_registry.models import Sample, Run
 
 
@@ -54,31 +56,59 @@ class FunctionTests(unittest.TestCase):
 
     def test_create_qiime(self):
         f = io.StringIO()
-        obs = mapping.create_qiime(f, self.run, self.samples, self.annotations)
+        obs = create_qiime(f, self.run, self.samples, self.annotations)
         self.assertEqual(f.getvalue(), MAPPING_TEXT)
 
     def test_parse(self):
-        input_file = iter(MAPPING_TEXT.splitlines())
-        rows = mapping.parse(input_file)
-        self.assertEqual(list(rows), self.qiime_recs)
-
-    def test_convert_from_qiime(self):
-        obs = mapping.convert_from_qiime(self.qiime_recs)
-        self.assertEqual(list(obs), self.recs)
+        input_file = io.StringIO(MAPPING_TEXT)
+        t = SampleTable.load(input_file)
+        self.assertEqual(t.recs, QIIME_RECS)
 
     def test_validate(self):
-        self.assertEqual(mapping.validate(self.recs), None)
-        self.recs[1]["sample_name"] = "S1"
-        self.assertRaises(ValueError, mapping.validate, self.recs)
+        self.assertEqual(validate(NORMAL_RECS), None)
+        modified_recs = [r.copy() for r in NORMAL_RECS]
+        modified_recs[1]["sample_name"] = "S1"
+        self.assertRaises(ValueError, validate, modified_recs)
 
-    def test_split_annotations(self):
-        split_recs = mapping.split_annotations(self.recs)
-        sample_tup, annotation_tups = next(split_recs)
-        self.assertEqual(sample_tup, ("S1", "GCCT"))
-        self.assertEqual(list(sorted(annotation_tups)), [
-            ("HostSpecies", "Human"),
-            ("SubjectID", "Hu23"),
-            ('primer_sequence', 'AGGCTT')])
+
+class QiimeSampleTableTests(unittest.TestCase):
+    def test_convert_from_qiime(self):
+        obs = QiimeSampleTable(QIIME_RECS)
+        self.assertEqual(obs.recs, NORMAL_RECS)
+
+
+
+NORMAL_RECS = [
+    {
+        "sample_name": "S1",
+        "barcode_sequence": "GCCT",
+        "primer_sequence": "AGGCTT",
+        "HostSpecies": "Human",
+        "SubjectID": "Hu23",
+    },
+    {
+        "sample_name": "S2",
+        "barcode_sequence": "GCAT",
+        "primer_sequence": "AGGCTT",
+    },
+]
+
+QIIME_RECS = [
+    {
+        "SampleID": "S1",
+        "BarcodeSequence": "GCCT",
+        "LinkerPrimerSequence": "AGGCTT",
+        "HostSpecies": "Human",
+        "SubjectID": "Hu23",
+        "Description": "PCMP000021",
+    },
+    {
+        "SampleID": "S2",
+        "BarcodeSequence": "GCAT",
+        "LinkerPrimerSequence": "AGGCTT",
+        "Description": "PCMP000022",
+    },
+]
 
 
 MAPPING_TEXT = u"""\

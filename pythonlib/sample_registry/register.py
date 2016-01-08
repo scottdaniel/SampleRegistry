@@ -90,12 +90,10 @@ def register_sample_annotations(
         help="Sample table in TSV format")
     args = p.parse_args(argv)
 
-    # Read sample table
-    recs = list(mapping.parse(args.sample_info_file))
-    if not recs:
-        p.error("No records found.  Problem with windows line endings?")
-    mapping.validate(recs)
-    samples, annotations = zip(*list(mapping.split_annotations(recs)))
+    t = mapping.SampleTable.load(args.sample_info_file)
+    t.validate()
+    samples = t.core_info
+    annotations = t.annotations
 
     # Check for run
     if not coredb.query_run_exists(args.run_accession):

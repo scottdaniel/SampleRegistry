@@ -15,16 +15,88 @@ ALLOWED_CHARS = {
     }
 
 
-SAMPLE_FIELDS = (
-    "sample_name", "barcode_sequence")
 
 
-QIIME_FIELDS = (
-    ("SampleID", "sample_name", None),
-    ("BarcodeSequence", "barcode_sequence", None),
-    ("LinkerPrimerSequence", "primer_sequence", ""),
-    ("Description", "accession", None),
+
+
+class SampleTable(object):
+    CORE_FIELDS = ("sample_name", "barcode_sequence")
+    def __init__(self, recs):
+        self.recs = list(recs)
+
+    def validate(self):
+        validate(self.recs)
+
+    @classmethod
+    def load(cls, f):
+        recs = list(cls.parse(f))
+        if not recs:
+            raise ValueError(
+                "No records found in sample info file. "
+                "Problem with windows line endings?")
+        return cls(recs)
+
+    @classmethod
+    def _parse(cls, f):
+        """Parse mapping file, return each record as a dict."""
+        header = next(f).lstrip("#")
+        keys = cls._tokenize(header)
+        assert(all(keys)) # No blank fields in header
+        for line in f:
+            if line.startswith("#"):
+                continue
+            if not line.strip():
+                continue
+            vals = cls._tokenize(line)
+            yield dict([(k, v) for k, v in zip(keys, vals) if v not in NAs])
+
+    @classmethod
+    def _tokenize(cls, line):
+        """Tokenize a single line"""
+        line = line.rstrip("\n\r")
+        toks = line.split("\t")
+        return [t.strip() for t in toks]
+
+    @property
+    def core_info(self):
+        for r in self.recs:
+            yield tuple(r.get(f, "") for f in self.CORE_FIELDS)
+
+    @property
+    def annotations(self):
+        for r in self.recs:
+            annotation_keys = set(r.keys()) - set(self.CORE_FIELDS)
+            yield [(k, r[k]) for k in annotation_keys]
+
+
+class QiimeSampleTable(SampleTable):
+    QIIME_FIELDS = (
+        ("SampleID", "sample_name", None),
+        ("BarcodeSequence", "barcode_sequence", None),
+        ("LinkerPrimerSequence", "primer_sequence", ""),
+        ("Description", "accession", None),
     )
+
+    def __init__(self, recs):
+        super(QiimeSampleTable, self).__init__(recs)
+        self.convert()
+
+    def convert(self):
+        """Convert records from a QIIME mapping file to registry format."""
+        for r in self.recs:
+            # Description column is often filled in with junk, and we
+            # fill it in with new values when exporting.  Remove it if
+            # present.
+            if "Description" in r:
+                del r["Description"]
+            for qiime_field, core_field, default_val in self.QIIME_FIELDS:
+                if core_field in r:
+                    raise ValueError(
+                        "Trying to convert from QIIME format mapping, but core "
+                        "field %s is already present and filled in.")
+                qiime_val = r.pop(qiime_field, None)
+                if qiime_val is not None:
+                    r[core_field] = qiime_val
 
 
 def create(f, samples):
@@ -55,7 +127,7 @@ def cast(records, left_cols, right_cols, missing="NA"):
 
 
 def _modify_fields_for_qiime(sample):
-    for qiime_col, orig_col, default_val in QIIME_FIELDS:
+    for qiime_col, orig_col, default_val in QiimeSampleTable.QIIME_FIELDS:
         if orig_col in sample:
             sample[qiime_col] = sample[orig_col]
             del sample[orig_col]
@@ -98,46 +170,8 @@ def create_qiime(f, run, samples, annotations):
         f.write(u"\n")
 
 
-def parse(f):
-    """Parse mapping file, return each record as a dict."""
-    header = next(f).lstrip("#")
-    keys = _tokenize(header)
-    assert(all(keys)) # No blank fields in header
-    for line in f:
-        if line.startswith("#"):
-            continue
-        if not line.strip():
-            continue
-        vals = _tokenize(line)
-        yield dict([(k, v) for k, v in zip(keys, vals) if v not in NAs])
 
 
-def _tokenize(line):
-    """Tokenize a single line"""
-    line = line.rstrip("\n\r")
-    toks = line.split("\t")
-    return [t.strip() for t in toks]
-
-
-def convert_from_qiime(recs):
-    """Convert records from a QIIME mapping file to registry format."""
-    for r in recs:
-
-        # Description column is often filled in with junk, and we
-        # fill it in with new values when exporting.  Remove it if
-        # present.
-        if "Description" in r:
-            del r["Description"]
-
-        for qiime_field, core_field, default_val in QIIME_FIELDS:
-            if core_field in r:
-                raise ValueError(
-                    "Trying to convert from QIIME format mapping, but core "
-                    "field %s is already present and filled in.")
-            qiime_val = r.pop(qiime_field, None)
-            if qiime_val is not None:
-                r[core_field] = qiime_val
-        yield r
 
 
 def validate(recs):
@@ -166,17 +200,3 @@ def validate(recs):
         if barcode in barcodes:
             raise ValueError("Duplicate barcode: %s" % r)
         barcodes.add(barcode)
-
-
-def split_annotations(recs):
-    """Extract core sample info from records.
-
-    Yields a tuple for each record.  First element contains core
-    sample fields: (name, barcode).  Second element is a list
-    of annotation key, value pairs: [(annot_key, annot_val), ...]
-    """
-    for r in recs:
-        sample = tuple(r.get(f, "") for f in SAMPLE_FIELDS)
-        annotation_keys = set(r.keys()) - set(SAMPLE_FIELDS)
-        annotations = [(k, r[k]) for k in annotation_keys]
-        yield sample, annotations
