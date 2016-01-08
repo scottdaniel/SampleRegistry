@@ -15,10 +15,6 @@ ALLOWED_CHARS = {
     }
 
 
-
-
-
-
 class SampleTable(object):
     CORE_FIELDS = ("sample_name", "barcode_sequence")
     def __init__(self, recs):
@@ -29,7 +25,7 @@ class SampleTable(object):
 
     @classmethod
     def load(cls, f):
-        recs = list(cls.parse(f))
+        recs = list(cls._parse(f))
         if not recs:
             raise ValueError(
                 "No records found in sample info file. "
@@ -124,54 +120,6 @@ def cast(records, left_cols, right_cols, missing="NA"):
             idx = header.index(key)
             row[idx] = val
         yield row
-
-
-def _modify_fields_for_qiime(sample):
-    for qiime_col, orig_col, default_val in QiimeSampleTable.QIIME_FIELDS:
-        if orig_col in sample:
-            sample[qiime_col] = sample[orig_col]
-            del sample[orig_col]
-        if (qiime_col not in sample) and (default_val is not None):
-            sample[qiime_col] = default_val
-    return sample
-
-
-def _integrate_eav(samples, annotations):
-    sample_accessions = [(s.accession, s.as_dict()) for s in samples]
-    samples_by_accession = dict(sample_accessions)
-    for acc, key, val in annotations:
-        s = samples_by_accession.get(acc)
-        if s is not None:
-            s[key] = val
-    return [s for _, s in sample_accessions]
-
-
-def create_qiime(f, run, samples, annotations):
-    """Create a QIIME mapping file."""
-    samples = _integrate_eav(samples, annotations)
-    samples = [_modify_fields_for_qiime(s) for s in samples]
-    qiime_left = ["SampleID", "BarcodeSequence", "LinkerPrimerSequence"]
-    qiime_right = ["Description"]
-    rows = cast(samples, qiime_left, qiime_right)
-
-    header = next(rows)
-    f.write(u"#")
-    f.write(u"\t".join(header))
-    f.write(u"\n")
-
-    f.write(u"#%s\n" % run.comment)
-    f.write(u"#Sequencing date: %s\n" % run.date)
-    f.write(u"#Region: %s\n" % run.region)
-    f.write(u"#Platform: %s\n" % run.platform)
-    f.write(u"#Run accession: %s\n" % run.formatted_accession)
-
-    for row in rows:
-        f.write(u"\t".join(row))
-        f.write(u"\n")
-
-
-
-
 
 
 def validate(recs):

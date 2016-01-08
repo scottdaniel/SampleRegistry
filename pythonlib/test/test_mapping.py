@@ -3,7 +3,7 @@ import io
 import unittest
 
 from sample_registry.mapping import (
-    SampleTable, QiimeSampleTable, validate, create, create_qiime,
+    SampleTable, QiimeSampleTable, validate, create,
 )
 from sample_registry.models import Sample, Run
 
@@ -53,11 +53,6 @@ class FunctionTests(unittest.TestCase):
                 "primer_sequence": "AGGCTT",
                 },
             ]
-
-    def test_create_qiime(self):
-        f = io.StringIO()
-        obs = create_qiime(f, self.run, self.samples, self.annotations)
-        self.assertEqual(f.getvalue(), MAPPING_TEXT)
 
     def test_parse(self):
         input_file = io.StringIO(MAPPING_TEXT)
