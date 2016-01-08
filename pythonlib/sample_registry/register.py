@@ -62,12 +62,29 @@ You have been warned!!!
 """
 
 
+STYLE_HELP = """\
+Style of sample table.  For 'vanilla' (the default), no conversion is
+performed.  For 'qiime', the BarcodeSequence and LinkerPrimerSequence
+fields are converted to barcode_sequence and primer_sequence,
+respectively, and the Description field is dropped.  For 'nextera',
+the DNA barcode sequences are filled in automatically from the fields
+barcode_index_fwd and barcode_index_rev.
+"""
+
+
+SAMPLE_TABLE_STYLES = {
+    'vanilla': mapping.SampleTable,
+    'qiime': mapping.QiimeSampleTable,
+    'nextera': mapping.NexteraSampleTable,
+}
+
+
 def register_samples():
     return register_sample_annotations(None, True)
 
 
 def register_annotations():
-    return register_annotations_script(None, False)
+    return register_sample_annotations(None, False)
 
 
 def register_sample_annotations(
@@ -81,16 +98,18 @@ def register_sample_annotations(
         p = argparse.ArgumentParser(
             description=ANNOTATIONS_DESC, epilog=ANNOTATIONS_EPILOG)
     p.add_argument(
-        "-r", "--run_accession",
-        type=int, required=True,
+        "run_accession", type=int,
         help="Run accession")
     p.add_argument(
-        "-s", "--sample_info_file",
-        type=argparse.FileType('r'), required=True,
+        "sample_info_file", type=argparse.FileType('r'),
         help="Sample table in TSV format")
+    p.add_argument(
+        "--style", choices=SAMPLE_TABLE_STYLES.keys(), default="vanilla",
+        help=STYLE_HELP)
     args = p.parse_args(argv)
 
-    t = mapping.SampleTable.load(args.sample_info_file)
+    table_class = SAMPLE_TABLE_STYLES[args.style]
+    t = table_class.load(args.sample_info_file)
     t.validate()
     samples = t.core_info
     annotations = t.annotations

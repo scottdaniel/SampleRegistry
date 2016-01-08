@@ -55,7 +55,7 @@ class RegisterScriptTests(unittest.TestCase):
         register_run(self.run_args, self.db)
         out = io.StringIO()
         sample_file = temp_sample_file(self.samples)
-        args = ["-r", "1", "-s", sample_file.name]
+        args = ["1", sample_file.name]
         register_sample_annotations(args, True, self.db, out)
 
         # Check that accession number is assigned
@@ -71,7 +71,7 @@ class RegisterScriptTests(unittest.TestCase):
     def test_register_annotations(self):
         register_run(self.run_args, self.db)
         sample_file = temp_sample_file(self.samples)
-        args = ["-r", "1", "-s", sample_file.name]
+        args = [ "1", sample_file.name]
         register_sample_annotations(args, True, self.db)
 
         # Update SampleType, add fg
@@ -81,7 +81,7 @@ class RegisterScriptTests(unittest.TestCase):
         # Remove bb
         del modified_samples[0]["bb"]
         sample_file = temp_sample_file(modified_samples)
-        args = ["-r", "1", "-s", sample_file.name]
+        args = ["1", sample_file.name]
         register_sample_annotations(args, False, self.db)
 
         self.assertEqual(
