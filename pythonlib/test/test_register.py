@@ -3,7 +3,7 @@ import tempfile
 import unittest
 
 from sample_registry.db import CoreDb
-from sample_registry.mapping import create
+from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
 )
@@ -11,7 +11,8 @@ from sample_registry.register import (
 
 def temp_sample_file(samples):
     f = tempfile.NamedTemporaryFile(mode="wt")
-    create(f, samples)
+    t = SampleTable(samples)
+    t.write(f)
     f.seek(0)
     return f
 
