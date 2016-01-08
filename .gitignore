@@ -1,2 +1,4 @@
 *.pyc
 website/core.db
+*.egg-info
+
