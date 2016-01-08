@@ -98,6 +98,30 @@ class QiimeSampleTable(SampleTable):
                     r[core_field] = qiime_val
 
 
+class NexteraSampleTable(SampleTable):
+    FWD_INDEX_KEY = "barcode_index_fwd"
+    REV_INDEX_KEY = "barcode_index_rev"
+
+    def __init__(self, recs):
+        super(NexteraSampleTable, self).__init__(recs)
+        self.convert_barcodes()
+
+    def convert_barcodes(self):
+        barcodes = dict(line.split() for line in NEXTERA_BARCODES.splitlines())
+        for r in self.recs:
+            try:
+                fwd_index = r[self.FWD_INDEX_KEY]
+                fwd_barcode = barcodes[fwd_index]
+                rev_index = r[self.REV_INDEX_KEY]
+                rev_barcode = barcodes[rev_index]
+                r["barcode_sequence"] = fwd_barcode + "-" + rev_barcode
+            except KeyError as e:
+                raise KeyError(
+                    "Could not find DNA barcode sequence for this record:\n"
+                    "%s\n%s" % (r, e)
+                )
+
+
 def _cast(records, left_cols, right_cols, missing="NA"):
     records = list(records)
     all_cols = set(left_cols + right_cols)
@@ -151,3 +175,50 @@ def _validate(recs):
         if barcode in barcodes:
             raise ValueError("Duplicate barcode: %s" % r)
         barcodes.add(barcode)
+
+NEXTERA_BARCODES = u"""\
+N701	TAAGGCGA
+N702	CGTACTAG
+N703	AGGCAGAA
+N704	TCCTGAGC
+N705	GGACTCCT
+N706	TAGGCATG
+N707	CTCTCTAC
+N708	CAGAGAGG
+N709	GCTACGCT
+N710	CGAGGCTG
+N711	AAGAGGCA
+N712	GTAGAGGA
+N714	GCTCATGA
+N715	ATCTCAGG
+N716	ACTCGCTA
+N718	GGAGCTAC
+N719	GCGTAGTA
+N720	CGGAGCCT
+N721	TACGCTGC
+N722	ATGCGCAG
+N723	TAGCGCTC
+N724	ACTGAGCG
+N726	CCTAAGAC
+N727	CGATCAGT
+N728	TGCAGCTA
+N729	TCGACGTC
+S501	TAGATCGC
+S502	CTCTCTAT
+S503	TATCCTCT
+S504	AGAGTAGA
+S505	GTAAGGAG
+S506	ACTGCATA
+S507	AAGGAGTA
+S508	CTAAGCCT
+S510	CGTCTAAT
+S511	TCTCTCCG
+S513	TCGACTAG
+S515	TTCTAGCT
+S516	CCTAGAGT
+S517	GCGTAAGA
+S518	CTATTAAG
+S520	AAGGCTAT
+S521	GAGCCTTA
+S522	TTATGCGA
+"""
