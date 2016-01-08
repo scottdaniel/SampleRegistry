@@ -28,7 +28,8 @@ class SampleTable(object):
             yield [(k, r[k]) for k in annotation_keys]
 
     def validate(self):
-        _validate(self.recs)
+        _validate_sample_ids(self.recs)
+        _validate_barcodes(self.recs)
 
     def write(self, f):
         rows = _cast(self.recs, ["sample_name", "barcode_sequence"], [])
@@ -68,12 +69,10 @@ class SampleTable(object):
 
 
 class QiimeSampleTable(SampleTable):
-    # Tuples of (Qiime field, normal field, default value)
     QIIME_FIELDS = (
-        ("SampleID", "sample_name", None),
-        ("BarcodeSequence", "barcode_sequence", None),
-        ("LinkerPrimerSequence", "primer_sequence", ""),
-        ("Description", "accession", None),
+        ("SampleID", "sample_name"),
+        ("BarcodeSequence", "barcode_sequence"),
+        ("LinkerPrimerSequence", "primer_sequence"),
     )
 
     def __init__(self, recs):
@@ -88,7 +87,7 @@ class QiimeSampleTable(SampleTable):
             # present.
             if "Description" in r:
                 del r["Description"]
-            for qiime_field, core_field, default_val in self.QIIME_FIELDS:
+            for qiime_field, core_field in self.QIIME_FIELDS:
                 if core_field in r:
                     raise ValueError(
                         "Trying to convert from QIIME format mapping, but core "
@@ -142,39 +141,32 @@ def _cast(records, left_cols, right_cols, missing="NA"):
         yield row
 
 
-ALLOWED_CHARS = {
-    "sample_name": set("._-" + string.ascii_letters + string.digits),
-    "barcode_sequence": set("AGCT"),
-    "primer_sequence": set("AGCTRYMKSWHBVDN"),
-    }
-
-
-def _validate(recs):
-    """Ensure records are valid.
-
-    Does not return a value, but raises an exception on an invalid record.
-    """
-    sample_names = set()
-    barcodes = set()
-
+def _validate_sample_ids(recs):
+    seen = set()
+    allowed = set("." + string.ascii_letters + string.digits)
+    allowed_start = set(string.ascii_letters)
     for r in recs:
-        for key, char_set in ALLOWED_CHARS.items():
-            if key in r:
-                val = r[key]
-                if not all(char in char_set for char in val):
-                    raise ValueError("Illegal characters in %s: %s" % (key, r))
+        sample_id = r["sample_name"]
+        if sample_id in seen:
+            raise ValueError("Duplicated sample ID: %s" % r)
+        seen.add(sample_id)
+        if not all(char in allowed for char in sample_id):
+            raise ValueError("Illegal characters in sample ID: %s" % r)
+        if not sample_id[0] in allowed_start:
+            raise ValueError("Sample ID must begin with a letter: %s" % r)
 
-        name = r.get("sample_name")
-        if name is None:
-            raise ValueError("No sample_name: %s" % r)
-        if name in sample_names:
-            raise ValueError("Duplicate sample_name: %s" % r)
-        sample_names.add(name)
 
-        barcode = r.get("barcode_sequence", "")
-        if barcode in barcodes:
-            raise ValueError("Duplicate barcode: %s" % r)
-        barcodes.add(barcode)
+def _validate_barcodes(recs):
+    seen = set()
+    allowed = set("AGCT")
+    for r in recs:
+        barcode = r["barcode_sequence"]
+        if barcode in seen:
+            raise ValueError("Duplicated barcode: %s" % r)
+        seen.add(barcode)
+        if not all(char in allowed for char in barcode):
+            raise ValueError("Illegal characters in barcode: %s" % r)
+
 
 NEXTERA_BARCODES = u"""\
 N701	TAAGGCGA

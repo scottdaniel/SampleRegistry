@@ -1,66 +1,38 @@
-"""Script functions to regster new elements in the CORE database"""
+"""Add samples and runs to the registry"""
 
-import logging
 import argparse
 import os
 import sys
 
-from sample_registry import db, mapping, models
+from sample_registry import db, mapping
 
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-CORE = db.CoreDb(THIS_DIR + "/../../website/core.db")
+__THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+REGISTRY_DATABASE = db.CoreDb(__THIS_DIR + "/../../website/core.db")
 
 
-COMMON_DESC = """\
-The sample table is a tab-separated values (TSV) file with one row for
-each sample.  The field names are given on the first line. Comment
-characters (#) are removed from the beginning of this line, if
-present.  Subsequent lines of the file are expected to be comments
-or values.  Comment lines must start with a '#' character.  Rows of
-sample info may not contain blank entries; please use 'NA' if a
-field does not apply to a sample.
-
-The 'sample_name' field is exprected to be filled in for each sample.
-Letters, numbers, dots, dashes, and underscores are allowed in
-sample names.  No spaces are permitted.
-
-The fields 'barcode_sequence', 'primer_sequence', and 'linker_sequence'
-are also used to fill in the corresponding columns in the samples
-table of the CORE registry database.  The combination of barcode and
-primer sequences must be unique for each sample.  Barcode sequences
-must be in upper case, unambiguous DNA characters (A, C, G, T).
-Primer sequences may contain ambiguous DNA characters (R, Y, N,
-etc.).  Linker sequences are not checked.
-    
-Additional fields are stored in the CORE registry database as sample
-annotations.
-
-For convenience, sample info may be provided in QIIME-compatible format.
-In this case, the 'Description' field will be removed, and other
-fields will be converted as follows: SampleID to sample_name,
-BarcodeSequence to barcode_sequence, and LinkerPrimerSequence to
-primer_sequence.
+VALIDATION_DETAILS = """\
+The 'SampleID' column must be filled in for each sample.  Only
+letters, numbers, and periods are allowed in sample IDs.  Sample IDs
+must begin with a letter.  The 'barcode_sequence' is also checked for
+uniqueness.
 """
 
 SAMPLES_DESC = """\
-Add new samples to the CORE database, with annotations.
-
-""" + COMMON_DESC
+Add new samples to the registry, with annotations.
+"""
 
 ANNOTATIONS_DESC = """\
-Replace annotations for samples in the CORE database.  Samples are
-matched using info in the sample table (sample name, barcode, primer).
-
-""" + COMMON_DESC
+Replace annotations for samples in the registry.  Samples are matched
+using the sample ID and barcode sequence.
+"""
 
 ANNOTATIONS_EPILOG = """\
 **BEWARE USER** This script will replace all existing annotations with
 those found in the provided file!  Make sure this is what you want, or
-you will be restoring database tables with Time Machine, as you deserve.
+you will be restoring database tables from backup files, as you deserve.
 You have been warned!!!
 """
-
 
 STYLE_HELP = """\
 Style of sample table.  For 'vanilla' (the default), no conversion is
@@ -71,12 +43,20 @@ the DNA barcode sequences are filled in automatically from the fields
 barcode_index_fwd and barcode_index_rev.
 """
 
+SAMPLE_TABLE_HELP = """\
+Sample table in tab-separated values (TSV) format.  Field names are
+listed in the first line.  If the first line begins with '#', the
+character is ignored.  Other lines beginning with '#' are interpreted
+as comments.
+"""
 
-SAMPLE_TABLE_STYLES = {
-    'vanilla': mapping.SampleTable,
-    'qiime': mapping.QiimeSampleTable,
-    'nextera': mapping.NexteraSampleTable,
-}
+__SAMPLE_TABLE_ARGS = [
+    ('vanilla', mapping.SampleTable),
+    ('qiime', mapping.QiimeSampleTable),
+    ('nextera', mapping.NexteraSampleTable),
+]
+SAMPLE_TABLE_CHOICES = [x for x, _ in __SAMPLE_TABLE_ARGS]
+SAMPLE_TABLE_CLASSES = dict(__SAMPLE_TABLE_ARGS)
 
 
 def register_samples():
@@ -88,58 +68,44 @@ def register_annotations():
 
 
 def register_sample_annotations(
-        argv=None, register_samples=False, coredb=None, out=sys.stdout):
-    if coredb is None:
-        coredb = CORE
+        argv=None, register_samples=False, coredb=REGISTRY_DATABASE,
+        out=sys.stdout):
 
     if register_samples:
         p = argparse.ArgumentParser(description=SAMPLES_DESC)
     else:
         p = argparse.ArgumentParser(
             description=ANNOTATIONS_DESC, epilog=ANNOTATIONS_EPILOG)
+
     p.add_argument(
         "run_accession", type=int,
-        help="Run accession")
+        help="Run accession number")
     p.add_argument(
-        "sample_info_file", type=argparse.FileType('r'),
-        help="Sample table in TSV format")
+        "sample_table", type=argparse.FileType('r'),
+        help=SAMPLE_TABLE_HELP)
     p.add_argument(
-        "--style", choices=SAMPLE_TABLE_STYLES.keys(), default="vanilla",
+        "--style", choices=SAMPLE_TABLE_CHOICES, default="vanilla",
         help=STYLE_HELP)
+    p.add_argument(
+        "--print_validation_details", action="store_true",
+        help="Print details on sample table validation and exit.")
     args = p.parse_args(argv)
 
-    table_class = SAMPLE_TABLE_STYLES[args.style]
-    t = table_class.load(args.sample_info_file)
-    t.validate()
-    samples = t.core_info
-    annotations = t.annotations
+    if args.print_validation_details:
+        print(VALIDATION_DETAILS)
+        sys.exit(0)
 
-    # Check for run
-    if not coredb.query_run_exists(args.run_accession):
-        raise ValueError("Run does not exist %s" % args.run_accession)
-
-    # Register and search for samples
-    sample_args = [(args.run_accession, n, b) for n, b in samples]
+    registry = SampleRegistry(coredb)
+    table_class = SAMPLE_TABLE_CLASSES[args.style]
+    sample_table = table_class.load(args.sample_table)
+    sample_table.validate()
+    registry.check_run_accession(args.run_accession)
     if register_samples:
-        coredb.register_samples(sample_args)
-    accessions = coredb.query_sample_accessions(sample_args)
-    unaccessioned = [s for a, s in zip(accessions, samples) if a is None]
-    if any(unaccessioned):
-        raise IOError("Not accessioned: %s" % unaccessioned)
-
-    # Register annotations
-    annotation_args = []
-    for a, pairs in zip(accessions, annotations):
-        for k, v in pairs:
-            annotation_args.append((a, k, v))
-    coredb.remove_annotations(accessions)
-    coredb.register_annotations(annotation_args)
+        registry.register_samples(args.run_accession, sample_table)
+    registry.register_annotations(args.run_accession, sample_table)
 
 
-def register_run(argv=None, coredb=None, out=sys.stdout):
-    if coredb is None:
-        coredb = CORE
-
+def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     machines = [
         "Illumina-MiSeq",
         "Illumina-HiSeq",
@@ -172,3 +138,36 @@ def register_run(argv=None, coredb=None, out=sys.stdout):
     acc = coredb.register_run(
         args.date, args.type, args.kit, args.lane, args.file, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
+
+
+class SampleRegistry(object):
+    def __init__(self, registry_db):
+        self.db = registry_db
+
+    def check_run_accession(self, acc):
+        if not self.db.query_run_exists(acc):
+            raise ValueError("Run does not exist %s" % acc)
+
+    def register_samples(self, run_accession, sample_table):
+        args = [(run_accession, n, b) for n, b in sample_table.core_info]
+        self.db.register_samples(args)
+
+    def register_annotations(self, run_accession, sample_table):
+        accessions = self._get_sample_accessions(run_accession, sample_table)
+        annotation_args = []
+        for a, pairs in zip(accessions, sample_table.annotations):
+            for k, v in pairs:
+                annotation_args.append((a, k, v))
+        self.db.remove_annotations(accessions)
+        self.db.register_annotations(annotation_args)
+
+    def _get_sample_accessions(self, run_accession, sample_table):
+        args = [(run_accession, n, b) for n, b in sample_table.core_info]
+        accessions = self.db.query_sample_accessions(args)
+        unaccessioned_recs = []
+        for accession, rec in zip(accessions, sample_table.recs):
+            if accession is None:
+                unaccessioned_recs.append(rec)
+        if unaccessioned_recs:
+            raise IOError("Not accessioned: %s" % unaccessioned_recs)
+        return accessions
