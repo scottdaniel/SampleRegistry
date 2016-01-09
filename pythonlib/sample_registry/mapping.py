@@ -7,14 +7,20 @@ class SampleTable(object):
     # Arguably the core fields should be in a different class, because
     # they really are of concern to the database and not the table of
     # samples.
-    CORE_FIELDS = ("sample_name", "barcode_sequence")
+    CORE_FIELDS = ["SampleID", "BarcodeSequence"]
 
     NAs = set([
         "", "0000-00-00", "null", "Null", "NA", "na", "none", "None",
     ])
 
     def __init__(self, recs):
-        self.recs = list(recs)
+        self.recs = recs
+        self._remove("Description")
+
+    def _remove(self, field):
+        for r in self.recs:
+            if field in r:
+                del r[field]
 
     @property
     def core_info(self):
@@ -32,7 +38,7 @@ class SampleTable(object):
         _validate_barcodes(self.recs)
 
     def write(self, f):
-        rows = _cast(self.recs, ["sample_name", "barcode_sequence"], [])
+        rows = _cast(self.recs, self.CORE_FIELDS, [])
         for row in rows:
             f.write(u"\t".join(row))
             f.write(u"\n")
@@ -67,53 +73,17 @@ class SampleTable(object):
         toks = line.split("\t")
         return [t.strip() for t in toks]
 
-
-class QiimeSampleTable(SampleTable):
-    QIIME_FIELDS = (
-        ("SampleID", "sample_name"),
-        ("BarcodeSequence", "barcode_sequence"),
-        ("LinkerPrimerSequence", "primer_sequence"),
-    )
-
-    def __init__(self, recs):
-        super(QiimeSampleTable, self).__init__(recs)
-        self.convert()
-
-    def convert(self):
-        """Convert records from a QIIME mapping file to registry format."""
+    def look_up_nextera_barcodes(self):
+        barcodes = dict(x.split() for x in NEXTERA_BARCODES.splitlines())
         for r in self.recs:
-            # Description column is often filled in with junk, and we
-            # fill it in with new values when exporting.  Remove it if
-            # present.
-            if "Description" in r:
-                del r["Description"]
-            for qiime_field, core_field in self.QIIME_FIELDS:
-                if core_field in r:
-                    raise ValueError(
-                        "Trying to convert from QIIME format mapping, but core "
-                        "field %s is already present and filled in.")
-                qiime_val = r.pop(qiime_field, None)
-                if qiime_val is not None:
-                    r[core_field] = qiime_val
-
-
-class NexteraSampleTable(SampleTable):
-    FWD_INDEX_KEY = "barcode_index_fwd"
-    REV_INDEX_KEY = "barcode_index_rev"
-
-    def __init__(self, recs):
-        super(NexteraSampleTable, self).__init__(recs)
-        self.convert_barcodes()
-
-    def convert_barcodes(self):
-        barcodes = dict(line.split() for line in NEXTERA_BARCODES.splitlines())
-        for r in self.recs:
+            if "BarcodeSequence" in r:
+                continue
             try:
-                fwd_index = r[self.FWD_INDEX_KEY]
+                fwd_index = r["barcode_index_fwd"]
                 fwd_barcode = barcodes[fwd_index]
-                rev_index = r[self.REV_INDEX_KEY]
+                rev_index = r["barcode_index_rev"]
                 rev_barcode = barcodes[rev_index]
-                r["barcode_sequence"] = fwd_barcode + "-" + rev_barcode
+                r["BarcodeSequence"] = fwd_barcode + "-" + rev_barcode
             except KeyError as e:
                 raise KeyError(
                     "Could not find DNA barcode sequence for this record:\n"
@@ -123,6 +93,8 @@ class NexteraSampleTable(SampleTable):
 
 def _cast(records, left_cols, right_cols, missing="NA"):
     records = list(records)
+    # Make a copy for appending
+    left_cols = list(left_cols)
     all_cols = set(left_cols + right_cols)
     for r in records:
         for key in sorted(r.keys()):
@@ -146,7 +118,7 @@ def _validate_sample_ids(recs):
     allowed = set("." + string.ascii_letters + string.digits)
     allowed_start = set(string.ascii_letters)
     for r in recs:
-        sample_id = r["sample_name"]
+        sample_id = r["SampleID"]
         if sample_id in seen:
             raise ValueError("Duplicated sample ID: %s" % r)
         seen.add(sample_id)
@@ -158,9 +130,9 @@ def _validate_sample_ids(recs):
 
 def _validate_barcodes(recs):
     seen = set()
-    allowed = set("AGCT")
+    allowed = set("AGCT-")
     for r in recs:
-        barcode = r["barcode_sequence"]
+        barcode = r["BarcodeSequence"]
         if barcode in seen:
             raise ValueError("Duplicated barcode: %s" % r)
         seen.add(barcode)

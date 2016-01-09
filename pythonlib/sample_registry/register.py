@@ -4,19 +4,13 @@ import argparse
 import os
 import sys
 
-from sample_registry import db, mapping
+from sample_registry.db import CoreDb
+from sample_registry.mapping import SampleTable
 
 
 __THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-REGISTRY_DATABASE = db.CoreDb(__THIS_DIR + "/../../website/core.db")
+REGISTRY_DATABASE = CoreDb(__THIS_DIR + "/../../website/core.db")
 
-
-VALIDATION_DETAILS = """\
-The 'SampleID' column must be filled in for each sample.  Only
-letters, numbers, and periods are allowed in sample IDs.  Sample IDs
-must begin with a letter.  The 'barcode_sequence' is also checked for
-uniqueness.
-"""
 
 SAMPLES_DESC = """\
 Add new samples to the registry, with annotations.
@@ -34,29 +28,12 @@ you will be restoring database tables from backup files, as you deserve.
 You have been warned!!!
 """
 
-STYLE_HELP = """\
-Style of sample table.  For 'vanilla' (the default), no conversion is
-performed.  For 'qiime', the BarcodeSequence and LinkerPrimerSequence
-fields are converted to barcode_sequence and primer_sequence,
-respectively, and the Description field is dropped.  For 'nextera',
-the DNA barcode sequences are filled in automatically from the fields
-barcode_index_fwd and barcode_index_rev.
-"""
-
 SAMPLE_TABLE_HELP = """\
 Sample table in tab-separated values (TSV) format.  Field names are
 listed in the first line.  If the first line begins with '#', the
 character is ignored.  Other lines beginning with '#' are interpreted
 as comments.
 """
-
-__SAMPLE_TABLE_ARGS = [
-    ('vanilla', mapping.SampleTable),
-    ('qiime', mapping.QiimeSampleTable),
-    ('nextera', mapping.NexteraSampleTable),
-]
-SAMPLE_TABLE_CHOICES = [x for x, _ in __SAMPLE_TABLE_ARGS]
-SAMPLE_TABLE_CLASSES = dict(__SAMPLE_TABLE_ARGS)
 
 
 def register_samples():
@@ -83,22 +60,13 @@ def register_sample_annotations(
     p.add_argument(
         "sample_table", type=argparse.FileType('r'),
         help=SAMPLE_TABLE_HELP)
-    p.add_argument(
-        "--style", choices=SAMPLE_TABLE_CHOICES, default="vanilla",
-        help=STYLE_HELP)
-    p.add_argument(
-        "--print_validation_details", action="store_true",
-        help="Print details on sample table validation and exit.")
     args = p.parse_args(argv)
 
-    if args.print_validation_details:
-        print(VALIDATION_DETAILS)
-        sys.exit(0)
-
     registry = SampleRegistry(coredb)
-    table_class = SAMPLE_TABLE_CLASSES[args.style]
-    sample_table = table_class.load(args.sample_table)
+    sample_table = SampleTable.load(args.sample_table)
+    sample_table.look_up_nextera_barcodes()
     sample_table.validate()
+
     registry.check_run_accession(args.run_accession)
     if register_samples:
         registry.register_samples(args.run_accession, sample_table)

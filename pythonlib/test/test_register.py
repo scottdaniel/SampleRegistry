@@ -30,8 +30,8 @@ class RegisterScriptTests(unittest.TestCase):
             "--comment", "mdsnfa adsf",
         ]
         self.samples = [{
-            "sample_name": "abc123",
-            "barcode_sequence": "GGGCCT",
+            "SampleID": "abc123",
+            "BarcodeSequence": "GGGCCT",
             "SampleType": "Oral swab",
             "bb": "cd e29",
         }]
