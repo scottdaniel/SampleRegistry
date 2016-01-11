@@ -119,11 +119,12 @@ class CoreDb(object):
         cur.close()
         return res
     
-    def register_samples(self, sample_tups):
-        """Registers samples from tuples of run_acc, name, bc.
+    def register_samples(self, run_accession, sample_bcs):
+        """Registers samples from tuples of SampleID, BarcodeSequence.
 
         Returns a list of sample accessions.
         """
+        sample_tups = [(run_accession, n, b) for n, b in sample_bcs]
         for s in sample_tups:
             cur = self.con.cursor()
             cur.execute(self.select_sample_bc, s)
@@ -141,11 +142,12 @@ class CoreDb(object):
         cur.close()
         return accessions
 
-    def query_sample_accessions(self, sample_tups):
-        """Looks up sample accessions from tuples of run_acc, name, bc.
+    def query_sample_accessions(self, run_accession, sample_bcs):
+        """Looks up sample accessions from tuples of name, bc.
 
         Returns a list of sample accessions.
         """
+        sample_tups = [(run_accession, n, b) for n, b in sample_bcs]
         res = []
         for s in sample_tups:
             cur = self.con.cursor()

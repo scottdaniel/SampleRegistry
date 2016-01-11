@@ -60,7 +60,7 @@ class RegisterScriptTests(unittest.TestCase):
 
         # Check that accession number is assigned
         self.assertEqual(
-            self.db.query_sample_accessions([("1", "abc123", "GGGCCT")]),
+            self.db.query_sample_accessions(1, [("abc123", "GGGCCT")]),
             [1])
 
         # Check that annotations are saved to the database

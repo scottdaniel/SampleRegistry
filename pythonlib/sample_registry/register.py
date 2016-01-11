@@ -117,8 +117,7 @@ class SampleRegistry(object):
             raise ValueError("Run does not exist %s" % acc)
 
     def register_samples(self, run_accession, sample_table):
-        args = [(run_accession, n, b) for n, b in sample_table.core_info]
-        self.db.register_samples(args)
+        self.db.register_samples(run_accession, sample_table.core_info)
 
     def register_annotations(self, run_accession, sample_table):
         accessions = self._get_sample_accessions(run_accession, sample_table)
@@ -131,7 +130,9 @@ class SampleRegistry(object):
 
     def _get_sample_accessions(self, run_accession, sample_table):
         args = [(run_accession, n, b) for n, b in sample_table.core_info]
-        accessions = self.db.query_sample_accessions(args)
+        accessions = self.db.query_sample_accessions(
+            run_accession, sample_table.core_info
+        )
         unaccessioned_recs = []
         for accession, rec in zip(accessions, sample_table.recs):
             if accession is None:

@@ -12,12 +12,12 @@ class CoreDbTests(unittest.TestCase):
             u"run_file.fastq", u"Bob's run",
             )
         self.run_acc = self.db.register_run(*self.run)
-        self.samples = [
-            (self.run_acc, "Sample1", "ABC"),
-            (self.run_acc, "Sample2", "DEF"),
-            (self.run_acc, "My.Sample3", "GHI"),
+        self.sample_bcs = [
+            ("Sample1", "ABC"),
+            ("Sample2", "DEF"),
+            ("My.Sample3", "GHI"),
             ]
-        self.single_sample = self.samples[0]
+        self.single_sample = self.sample_bcs[0]
         self.annotations = {
             "SampleType": "Oral swab",
             "SubjectID": "Subj23",
@@ -33,15 +33,17 @@ class CoreDbTests(unittest.TestCase):
 
     def test_register_samples(self):
         # Here, accessions given by database cursor
-        registered_accessions = self.db.register_samples(self.samples)
+        registered_accessions = self.db.register_samples(
+            1, self.sample_bcs)
         self.assertEqual(registered_accessions, [1, 2, 3])
         # Double-check that we can actually find the samples in a query
-        queried_accessions = self.db.query_sample_accessions(self.samples)
+        queried_accessions = self.db.query_sample_accessions(
+            1, self.sample_bcs)
         self.assertEqual(queried_accessions, [1, 2, 3])        
 
     def test_register_annotations(self):
-        first_sample = self.samples[0]
-        sample_accessions = self.db.register_samples([first_sample])
+        first_sample = self.sample_bcs[0]
+        sample_accessions = self.db.register_samples(1, [first_sample])
         acc = sample_accessions[0]
         annotation_triples = [
             (acc, k, v) for k, v in self.annotations.items()]
@@ -50,7 +52,7 @@ class CoreDbTests(unittest.TestCase):
         self.assertEqual(obs_annotations, self.annotations)
 
     def test_remove_annotations(self):
-        sample_accessions = self.db.register_samples(self.samples)
+        sample_accessions = self.db.register_samples(1, self.sample_bcs)
         annotation_triples = []
         for acc in sample_accessions:
             for k, v in self.annotations.items():
