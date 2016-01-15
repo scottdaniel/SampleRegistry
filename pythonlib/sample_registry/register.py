@@ -1,6 +1,7 @@
 """Add samples and runs to the registry"""
 
 import argparse
+import itertools
 import os
 import sys
 
@@ -83,22 +84,30 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     ]
 
     p = argparse.ArgumentParser(
-        description="Register a new run in the CORE database.")
+        description="Add a new run to the registry")
+    # Should be positional argument. Read additional info straight
+    # from the file.  Maybe support a manual override, or just edit
+    # the database directly.
     p.add_argument(
         "--file", required=True,
         help="Resource filepath (not checked for validity)")
+    # Remove and read from file
     p.add_argument(
         "--date", required=True,
         help="Run date (YYYY-MM-DD)")
+    # Keep this
     p.add_argument(
         "--comment", required=True,
         help="Comment (free text)")
+    # Remove and read from file
     p.add_argument(
         "--type", default="Immulina-MiSeq", choices=machines,
         help="Machine type")
+    # Keep this?
     p.add_argument(
         "--kit", default="Nextera XT", choices=kits,
         help="Machine kit")
+    # Remove and read from file
     p.add_argument("--lane", default="1",
         help="Lane number")
     args = p.parse_args(argv)
@@ -107,6 +116,27 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
         args.date, args.type, args.kit, args.lane, args.file, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
 
+
+def get_illumina_info(f):
+    """Read Illumina run info from a FASTQ file."""
+    # Structure of header line:
+    # @<instrument>:<run number>:<flowcell ID>:<lane>:<tile>:<x-pos>:<y-pos>
+    # <read>:<is filtered>:<control number>:<sample number>
+    header_line = next(f)
+    if not header_line.startswith("@"):
+        raise ValueError("Expected FASTQ header line, saw %s" % header_line)
+    # Remove '@' from beginning of line
+    header_line = header_line[1:].rstrip()
+    run_delim, read_delim = header_line.split(" ")
+    run_keys = ("instrument", "run_number", "flowcell_id", "lane")
+    info = _collect_delimited_vals(run_delim, run_keys)
+    read_keys = ("read", "is_filtered", "control_num", "barcode_seq")
+    info.update(_collect_delimited_vals(read_delim, read_keys))
+    return info
+
+def _collect_delimited_vals(text, keys, sep=":"):
+    vals = text.split(sep)
+    return dict(zip(keys, vals))
 
 class SampleRegistry(object):
     def __init__(self, registry_db):
