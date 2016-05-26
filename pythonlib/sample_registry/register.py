@@ -37,7 +37,8 @@ as comments.
 """
 
 def unregister_samples(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(
+        description="Remove samples for a sequencing run from the registry.")
     p.add_argument("run_accession", type=int, help="Run accession number")
     args = p.parse_args(argv)
 
