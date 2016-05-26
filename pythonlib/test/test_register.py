@@ -6,7 +6,8 @@ from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
-    get_illumina_info, unregister_samples,
+    get_illumina_info, parse_illumina_fastq_header,
+    unregister_samples,
 )
 
 
@@ -17,6 +18,24 @@ def temp_sample_file(samples):
     f.seek(0)
     return f
 
+
+class IlluminaTests(unittest.TestCase):
+    def test_parse_illumina_fastq_header(self):
+        header = "@D00727:21:C8LJ2ANXX:8:2209:1084:2044 1:N:0:NNNNNNNN+NNNNNNNN"
+        expected = {
+            "instrument": "D00727",
+            "run_number": "21",
+            "flowcell_id": "C8LJ2ANXX",
+            "lane": "8",
+            "tile": "2209",
+            "xpos": "1084",
+            "ypos": "2044",
+            "read": "1",
+            "is_filtered": "N",
+            "control_number": "0",
+            "index_reads": "NNNNNNNN+NNNNNNNN",
+            }
+        self.assertEqual(parse_illumina_fastq_header(header), expected)
 
 class RegisterScriptTests(unittest.TestCase):
     def setUp(self):

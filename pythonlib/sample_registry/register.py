@@ -3,7 +3,9 @@
 import argparse
 import itertools
 import os
+import re
 import sys
+import gzip
 
 from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
@@ -84,6 +86,89 @@ def register_sample_annotations(
     if register_samples:
         registry.register_samples(args.run_accession, sample_table)
     registry.register_annotations(args.run_accession, sample_table)
+
+def parse_illumina_fastq_header(line):
+    if not line.startswith("@"):
+        raise RuntimeError("Not a FASTQ header line")
+    # Remove first character, @
+    line = line[1:]
+    word1, _, word2 = line.partition(" ")
+
+    keys1 = [
+        "instrument", "run_number", "flowcell_id", "lane",
+        "tile", "xpos", "ypos",
+        ]
+    vals1 = dict((k, v) for k, v in zip(keys1, word1.split(":")))
+
+    keys2 = [
+        "read", "is_filtered", "control_number", "index_reads",
+        ]
+    vals2 = dict((k, v) for k, v in zip(keys2, word2.split(":")))
+
+    vals1.update(vals2)
+    return vals1
+
+
+# From https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
+def splitall(path):
+    allparts = []
+    while 1:
+        left, right = os.path.split(path)
+        if left == path:  # sentinel for absolute paths
+            allparts.insert(0, left)
+            break
+        elif right == path: # sentinel for relative paths
+            allparts.insert(0, right)
+            break
+        else:
+            path = left
+            allparts.insert(0, right)
+    return allparts
+
+
+def parse_illumina_folder_date(dirname):
+    dirs = splitall(dirname)
+    rundir = dirs[1]
+    if re.match("\\d{6}_", rundir):
+        year = rundir[0:2]
+        month = rundir[2:4]
+        day = rundir[4:6]
+        return "20{0}-{1}-{2}".format(year, month, day)
+    return None
+
+
+def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+    p = argparse.ArgumentParser(
+        description="Add a new run to the registry from an Illumina FASTQ file")
+    p.add_argument("filepath", type=argparse.FileType("r"))
+    p.add_argument("--date", help="Run date (YYYY-MM-DD)")
+    p.add_argument("--comment", required=True, help="Comment (free text)")
+    args = p.parse_args(argv)
+
+    if args.filepath.name.endswith(".gz"):
+        fastq_file = gzip.GzipFile(fileobj=args.filepath)
+    else:
+        fastq_file = args.filepath
+    first_line = next(fastq_file).strip()
+    fastq_info = parse_illumina_fastq_header(first_line)
+
+    if args.date is not None:
+        date = args.date
+    else:
+        date = parse_illumina_folder_date(args.filepath.name)
+    if date is None:
+        p.error("Could not find date in folder name, and no --date supplied")
+
+    if fastq_info["instrument"].startswith("D"):
+        run_type = "Illumina-HiSeq"
+    else:
+        run_type = "Illumina-MiSeq"
+    lane = fastq_info["lane"]
+    fastq_filepath = args.filepath.name
+
+    acc = coredb.register_run(
+        date, run_type, "Nextera XT", lane, fastq_filepath, args.comment)
+    out.write(u"Registered run %s in the database\n" % acc)
 
 
 def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
