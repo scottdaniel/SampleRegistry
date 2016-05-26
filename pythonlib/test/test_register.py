@@ -6,7 +6,7 @@ from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
-    get_illumina_info,
+    get_illumina_info, unregister_samples,
 )
 
 
@@ -60,9 +60,9 @@ class RegisterScriptTests(unittest.TestCase):
         register_sample_annotations(args, True, self.db, out)
 
         # Check that accession number is assigned
-        self.assertEqual(
-            self.db.query_sample_accessions(1, [("abc123", "GGGCCT")]),
-            [1])
+        obs_accessions = self.db.query_sample_accessions_by_barcode(
+            1, [("abc123", "GGGCCT")])
+        self.assertEqual(obs_accessions, [1])
 
         # Check that annotations are saved to the database
         self.assertEqual(
@@ -87,6 +87,17 @@ class RegisterScriptTests(unittest.TestCase):
 
         self.assertEqual(
             self.db.query_sample_annotations(1), new_annotations)
+
+    def test_unregister_samples(self):
+        register_run(self.run_args, self.db)
+        out = io.StringIO()
+        sample_file = temp_sample_file(self.samples)
+        args = ["1", sample_file.name]
+        register_sample_annotations(args, True, self.db, out)
+
+        unregister_samples(["1"], self.db)
+        self.assertEqual(self.db._query_nonstandard_annotations(1), {})
+        self.assertEqual(self.db.query_sample_accessions_by_run(1), [])
 
     def test_get_illumina_info(self):
         r1 = io.StringIO(R1_FASTQ)

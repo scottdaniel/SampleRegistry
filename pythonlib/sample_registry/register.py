@@ -36,6 +36,17 @@ character is ignored.  Other lines beginning with '#' are interpreted
 as comments.
 """
 
+def unregister_samples(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+    p = argparse.ArgumentParser()
+    p.add_argument("run_accession", type=int, help="Run accession number")
+    args = p.parse_args(argv)
+
+    registry = SampleRegistry(coredb)
+    registry.check_run_accession(args.run_accession)
+    samples_removed = registry.remove_samples(args.run_accession)
+    out.write("Removed {0} samples: {1}".format(
+        len(samples_removed), samples_removed))
+
 
 def register_samples():
     return register_sample_annotations(None, True)
@@ -149,6 +160,12 @@ class SampleRegistry(object):
     def register_samples(self, run_accession, sample_table):
         self.db.register_samples(run_accession, sample_table.core_info)
 
+    def remove_samples(self, run_accession):
+        accessions = self.db.query_sample_accessions_by_run(run_accession)
+        self.db.remove_annotations(accessions)
+        self.db.remove_samples(accessions)
+        return accessions
+
     def register_annotations(self, run_accession, sample_table):
         accessions = self._get_sample_accessions(run_accession, sample_table)
         annotation_args = []
@@ -160,7 +177,7 @@ class SampleRegistry(object):
 
     def _get_sample_accessions(self, run_accession, sample_table):
         args = [(run_accession, n, b) for n, b in sample_table.core_info]
-        accessions = self.db.query_sample_accessions(
+        accessions = self.db.query_sample_accessions_by_barcode(
             run_accession, sample_table.core_info
         )
         unaccessioned_recs = []

@@ -24,6 +24,14 @@ class CoreDb(object):
         "barcode_sequence = ?"
         )
 
+    select_samples = (
+        "SELECT sample_accession FROM samples WHERE run_accession = ?"
+    )
+
+    delete_sample = (
+        "DELETE FROM samples WHERE sample_accession = ?"
+    )
+
     insert_run = (
         "INSERT INTO runs "
         "(run_date, machine_type, machine_kit, lane, data_uri, comment) "
@@ -60,7 +68,7 @@ class CoreDb(object):
         "SELECT `key`, `val` "
         "FROM annotations WHERE sample_accession = ?"
         )
-        
+
     insert_nonstandard_annotation = (
         "INSERT INTO annotations "
         "(`sample_accession`, `key`, `val`) "
@@ -142,7 +150,7 @@ class CoreDb(object):
         cur.close()
         return accessions
 
-    def query_sample_accessions(self, run_accession, sample_bcs):
+    def query_sample_accessions_by_barcode(self, run_accession, sample_bcs):
         """Looks up sample accessions from tuples of name, bc.
 
         Returns a list of sample accessions.
@@ -157,6 +165,14 @@ class CoreDb(object):
             cur.close()
         return [r[0] if r else None for r in res]
 
+    def query_sample_accessions_by_run(self, run_accession):
+        cur = self.con.cursor()
+        cur.execute(self.select_samples, (run_accession, ))
+        self.con.commit()
+        res = cur.fetchall()
+        cur.close()
+        return [r[0] for r in res]
+
     def remove_annotations(self, sample_accessions):
         """Removes annotations from a sequence of sample accessions.
         """
@@ -166,6 +182,13 @@ class CoreDb(object):
             self.delete_standard_annotations, sample_accession_vals)
         cur.executemany(
             self.delete_nonstandard_annotations, sample_accession_vals)
+        self.con.commit()
+        cur.close()
+
+    def remove_samples(self, sample_accessions):
+        cur = self.con.cursor()
+        sample_accession_vals = [(acc,) for acc in sample_accessions]
+        cur.executemany(self.delete_sample, sample_accession_vals)
         self.con.commit()
         cur.close()
 
@@ -191,7 +214,7 @@ class CoreDb(object):
         pairs = zip(self.standard_annotation_keys, res)
         annotations = dict((k, v) for k, v in pairs if v is not None)
         return annotations
-        
+
     def _query_nonstandard_annotations(self, sample_accession):
         cur = self.con.cursor()
         cur.execute(

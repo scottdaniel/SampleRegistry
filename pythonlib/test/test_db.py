@@ -37,7 +37,7 @@ class CoreDbTests(unittest.TestCase):
             1, self.sample_bcs)
         self.assertEqual(registered_accessions, [1, 2, 3])
         # Double-check that we can actually find the samples in a query
-        queried_accessions = self.db.query_sample_accessions(
+        queried_accessions = self.db.query_sample_accessions_by_barcode(
             1, self.sample_bcs)
         self.assertEqual(queried_accessions, [1, 2, 3])        
 
@@ -62,7 +62,12 @@ class CoreDbTests(unittest.TestCase):
         for acc in sample_accessions:
             obs_annotations = self.db.query_sample_annotations(acc)
             self.assertEqual(obs_annotations, {})
- 
+
+    def test_query_sample_accessions_by_run(self):
+        self.db.register_samples(1, self.sample_bcs)
+        self.assertEqual(
+            self.db.query_sample_accessions_by_run(1), [1, 2, 3])
+
     def test_collect_standard_annotations(self):
         a = [
             (1, "SampleType", "a"),
