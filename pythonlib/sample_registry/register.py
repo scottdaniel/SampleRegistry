@@ -162,7 +162,7 @@ class SampleRegistry(object):
         self.db.register_samples(run_accession, sample_table.core_info)
 
     def remove_samples(self, run_accession):
-        accessions = self.db.query_sample_accessions_by_run(run_accession)
+        accessions = self.db.query_sample_accessions(run_accession)
         self.db.remove_annotations(accessions)
         self.db.remove_samples(accessions)
         return accessions
@@ -178,7 +178,7 @@ class SampleRegistry(object):
 
     def _get_sample_accessions(self, run_accession, sample_table):
         args = [(run_accession, n, b) for n, b in sample_table.core_info]
-        accessions = self.db.query_sample_accessions_by_barcode(
+        accessions = self.db.query_barcoded_sample_accessions(
             run_accession, sample_table.core_info
         )
         unaccessioned_recs = []

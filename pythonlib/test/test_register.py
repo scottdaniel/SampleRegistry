@@ -60,7 +60,7 @@ class RegisterScriptTests(unittest.TestCase):
         register_sample_annotations(args, True, self.db, out)
 
         # Check that accession number is assigned
-        obs_accessions = self.db.query_sample_accessions_by_barcode(
+        obs_accessions = self.db.query_barcoded_sample_accessions(
             1, [("abc123", "GGGCCT")])
         self.assertEqual(obs_accessions, [1])
 
@@ -97,7 +97,7 @@ class RegisterScriptTests(unittest.TestCase):
 
         unregister_samples(["1"], self.db)
         self.assertEqual(self.db._query_nonstandard_annotations(1), {})
-        self.assertEqual(self.db.query_sample_accessions_by_run(1), [])
+        self.assertEqual(self.db.query_sample_accessions(1), [])
 
     def test_get_illumina_info(self):
         r1 = io.StringIO(R1_FASTQ)

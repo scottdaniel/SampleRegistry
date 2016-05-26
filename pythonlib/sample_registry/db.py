@@ -150,7 +150,7 @@ class CoreDb(object):
         cur.close()
         return accessions
 
-    def query_sample_accessions_by_barcode(self, run_accession, sample_bcs):
+    def query_barcoded_sample_accessions(self, run_accession, sample_bcs):
         """Looks up sample accessions from tuples of name, bc.
 
         Returns a list of sample accessions.
@@ -165,7 +165,7 @@ class CoreDb(object):
             cur.close()
         return [r[0] if r else None for r in res]
 
-    def query_sample_accessions_by_run(self, run_accession):
+    def query_sample_accessions(self, run_accession):
         cur = self.con.cursor()
         cur.execute(self.select_samples, (run_accession, ))
         self.con.commit()
