@@ -1,8 +1,3 @@
-AuthUserFile /Library/WebServer/.htpasswd
-AuthName "Lab Secure Site"
-AuthType Basic
-Require valid-user
-
 <IfModule mod_rewrite.c>
       Options +FollowSymlinks
       Options +Indexes
