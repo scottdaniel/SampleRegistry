@@ -30,43 +30,56 @@ class CoreDbTests(unittest.TestCase):
         self.assertTrue(self.db.query_run_exists(self.run_acc))
         obs_run = self.db._query_run(self.run_acc)
         self.assertEqual(self.run, obs_run)
+        # Registering the run twice should raise an error
+        self.assertRaises(ValueError, self.db.register_run, *self.run)
+
+    def test_query_run_exists(self):
+        self.assertTrue(self.db.query_run_exists(1))
 
     def test_register_samples(self):
-        # Here, accessions given by database cursor
+        # Here, accessions given by database cursor.  In other tests,
+        # we double-check that we can actually find the samples in a
+        # query
         registered_accessions = self.db.register_samples(
             1, self.sample_bcs)
         self.assertEqual(registered_accessions, [1, 2, 3])
-        # Double-check that we can actually find the samples in a query
-        queried_accessions = self.db.query_barcoded_sample_accessions(
-            1, self.sample_bcs)
-        self.assertEqual(queried_accessions, [1, 2, 3])        
+        # Registering the samples again should raise an error
+        self.assertRaises(
+            ValueError, self.db.register_samples, 1, self.sample_bcs)
 
-    def test_register_annotations(self):
-        first_sample = self.sample_bcs[0]
-        sample_accessions = self.db.register_samples(1, [first_sample])
-        acc = sample_accessions[0]
-        annotation_triples = [
-            (acc, k, v) for k, v in self.annotations.items()]
-        self.db.register_annotations(annotation_triples)
-        obs_annotations = self.db.query_sample_annotations(acc)
-        self.assertEqual(obs_annotations, self.annotations)
-
-    def test_remove_annotations(self):
-        sample_accessions = self.db.register_samples(1, self.sample_bcs)
-        annotation_triples = []
-        for acc in sample_accessions:
-            for k, v in self.annotations.items():
-                annotation_triples.append((acc, k, v))
-        self.db.register_annotations(annotation_triples)
-        self.db.remove_annotations(sample_accessions)
-        for acc in sample_accessions:
-            obs_annotations = self.db.query_sample_annotations(acc)
-            self.assertEqual(obs_annotations, {})
+    def test_query_barcoded_sample_accessions(self):
+        self.db.register_samples(1, self.sample_bcs)
+        self.assertEqual(
+            self.db.query_barcoded_sample_accessions(1, self.sample_bcs),
+            [1, 2, 3])
 
     def test_query_sample_accessions(self):
         self.db.register_samples(1, self.sample_bcs)
         self.assertEqual(
             self.db.query_sample_accessions(1), [1, 2, 3])
+
+    def test_remove_samples(self):
+        self.db.register_samples(1, self.sample_bcs)
+        self.db.remove_samples([1, 2, 3])
+        self.assertEqual(self.db.query_sample_accessions(1), [])
+
+    def test_register_and_remove_annotations(self):
+        sample_accessions = self.db.register_samples(1, self.sample_bcs)
+        for acc in sample_accessions:
+            ann = [(acc, k, v) for k, v in self.annotations.items()]
+            self.db.register_annotations(ann)
+
+        self.db.remove_annotations(sample_accessions)
+        for acc in sample_accessions:
+            self.assertEqual(
+                self.db.query_sample_annotations(acc), {})
+
+    def test_register_and_query_annotations(self):
+        self.db.register_samples(1, [("Sample1", "GGCCTT")])
+        ann = [(1, k, v) for k, v in self.annotations.items()]
+        self.db.register_annotations(ann)
+        self.assertEqual(
+            self.db.query_sample_annotations(1), self.annotations)
 
     def test_collect_standard_annotations(self):
         a = [

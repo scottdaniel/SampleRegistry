@@ -89,7 +89,7 @@ class CoreDb(object):
         cur.executescript(schema)
         self.con.commit()
         cur.close()
-        
+
     def register_run(self, date, mach_type, mach_kit, lane, fp, comment):
         """Register a new sequencing run.
 
@@ -140,7 +140,7 @@ class CoreDb(object):
             res = cur.fetchone()
             cur.close()
             if res is not None:
-                raise ValueError("Sample already registered: %s" % s)
+                raise ValueError("Sample already registered: {0}".format(s))
         accessions = []
         cur = self.con.cursor()
         for s in sample_tups:
@@ -166,12 +166,21 @@ class CoreDb(object):
         return [r[0] if r else None for r in res]
 
     def query_sample_accessions(self, run_accession):
+        """Find all sample accessions for a run."""
         cur = self.con.cursor()
         cur.execute(self.select_samples, (run_accession, ))
         self.con.commit()
         res = cur.fetchall()
         cur.close()
         return [r[0] for r in res]
+
+    def remove_samples(self, sample_accessions):
+        """Removes samples by accession number."""
+        cur = self.con.cursor()
+        sample_accession_vals = [(acc,) for acc in sample_accessions]
+        cur.executemany(self.delete_sample, sample_accession_vals)
+        self.con.commit()
+        cur.close()
 
     def remove_annotations(self, sample_accessions):
         """Removes annotations from a sequence of sample accessions.
@@ -182,13 +191,6 @@ class CoreDb(object):
             self.delete_standard_annotations, sample_accession_vals)
         cur.executemany(
             self.delete_nonstandard_annotations, sample_accession_vals)
-        self.con.commit()
-        cur.close()
-
-    def remove_samples(self, sample_accessions):
-        cur = self.con.cursor()
-        sample_accession_vals = [(acc,) for acc in sample_accessions]
-        cur.executemany(self.delete_sample, sample_accession_vals)
         self.con.commit()
         cur.close()
 
@@ -222,8 +224,7 @@ class CoreDb(object):
         self.con.commit()
         res = cur.fetchall()
         cur.close()
-        annotations = dict(
-            (k, v) for k, v in res if v is not None)
+        annotations = dict((k, v) for k, v in res if v is not None)
         return annotations
 
     def register_annotations(self, annotations):
@@ -256,6 +257,8 @@ class CoreDb(object):
 
     @classmethod
     def _collect_standard_annotations(cls, annotations):
+        """Transform standard annotations from EAV format to row format.
+        """
         keys_to_idx = dict(
             (b, a) for a, b in enumerate(cls.standard_annotation_keys))
         def make_empty_row():
