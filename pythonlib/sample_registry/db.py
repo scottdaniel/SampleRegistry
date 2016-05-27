@@ -84,7 +84,8 @@ class CoreDb(object):
         """Creates the necessary tables in a new database file.
         """
         this_dir = os.path.dirname(os.path.abspath(__file__))
-        schema = open(this_dir + "/../../website/schema.sql").read()
+        base_dir = os.path.dirname(os.path.dirname(this_dir))
+        schema = open(os.path.join(base_dir, "schema.sql")).read()
         cur = self.con.cursor()
         cur.executescript(schema)
         self.con.commit()

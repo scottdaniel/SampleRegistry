@@ -5,7 +5,7 @@ require_once 'lib/models.php';
 require_once 'lib/util.php';
 
 function configure() {
-    ORM::configure('sqlite:core.db');
+    ORM::configure('sqlite:/var/local/sample_registry/core.db');
 }
 
 function before() {

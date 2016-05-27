@@ -12,8 +12,7 @@ from sample_registry.mapping import SampleTable
 from sample_registry.illumina import IlluminaFastq
 
 
-__THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-REGISTRY_DATABASE = CoreDb(__THIS_DIR + "/../../website/core.db")
+REGISTRY_DATABASE = CoreDb("/var/local/sample_registry/core.db")
 
 
 SAMPLES_DESC = """\
