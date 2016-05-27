@@ -9,7 +9,9 @@ import gzip
 
 from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
-
+from sample_registry.illumina import (
+    parse_illumina_fastq_header, parse_illumina_folder_date,
+)
 
 __THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 REGISTRY_DATABASE = CoreDb(__THIS_DIR + "/../../website/core.db")
@@ -37,6 +39,7 @@ listed in the first line.  If the first line begins with '#', the
 character is ignored.  Other lines beginning with '#' are interpreted
 as comments.
 """
+
 
 def unregister_samples(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(
@@ -68,7 +71,6 @@ def register_sample_annotations(
     else:
         p = argparse.ArgumentParser(
             description=ANNOTATIONS_DESC, epilog=ANNOTATIONS_EPILOG)
-
     p.add_argument(
         "run_accession", type=int,
         help="Run accession number")
@@ -87,55 +89,6 @@ def register_sample_annotations(
         registry.register_samples(args.run_accession, sample_table)
     registry.register_annotations(args.run_accession, sample_table)
 
-def parse_illumina_fastq_header(line):
-    if not line.startswith("@"):
-        raise RuntimeError("Not a FASTQ header line")
-    # Remove first character, @
-    line = line[1:]
-    word1, _, word2 = line.partition(" ")
-
-    keys1 = [
-        "instrument", "run_number", "flowcell_id", "lane",
-        "tile", "xpos", "ypos",
-        ]
-    vals1 = dict((k, v) for k, v in zip(keys1, word1.split(":")))
-
-    keys2 = [
-        "read", "is_filtered", "control_number", "index_reads",
-        ]
-    vals2 = dict((k, v) for k, v in zip(keys2, word2.split(":")))
-
-    vals1.update(vals2)
-    return vals1
-
-
-# From https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch04s16.html
-def splitall(path):
-    allparts = []
-    while 1:
-        left, right = os.path.split(path)
-        if left == path:  # sentinel for absolute paths
-            allparts.insert(0, left)
-            break
-        elif right == path: # sentinel for relative paths
-            allparts.insert(0, right)
-            break
-        else:
-            path = left
-            allparts.insert(0, right)
-    return allparts
-
-
-def parse_illumina_folder_date(dirname):
-    dirs = splitall(dirname)
-    rundir = dirs[1]
-    if re.match("\\d{6}_", rundir):
-        year = rundir[0:2]
-        month = rundir[2:4]
-        day = rundir[4:6]
-        return "20{0}-{1}-{2}".format(year, month, day)
-    return None
-
 
 def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(
@@ -149,15 +102,14 @@ def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
         fastq_file = gzip.GzipFile(fileobj=args.filepath)
     else:
         fastq_file = args.filepath
-    first_line = next(fastq_file).strip()
-    fastq_info = parse_illumina_fastq_header(first_line)
+    fastq_info = parse_illumina_fastq_header(fastq_file)
 
     if args.date is not None:
         date = args.date
     else:
         date = parse_illumina_folder_date(args.filepath.name)
     if date is None:
-        p.error("Could not find date in folder name, and no --date supplied")
+        p.error("No --date supplied, could not find date in folder name.")
 
     if fastq_info["instrument"].startswith("D"):
         run_type = "Illumina-HiSeq"
@@ -213,27 +165,6 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
         args.date, args.type, args.kit, args.lane, args.file, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
 
-
-def get_illumina_info(f):
-    """Read Illumina run info from a FASTQ file."""
-    # Structure of header line:
-    # @<instrument>:<run number>:<flowcell ID>:<lane>:<tile>:<x-pos>:<y-pos>
-    # <read>:<is filtered>:<control number>:<sample number>
-    header_line = next(f)
-    if not header_line.startswith("@"):
-        raise ValueError("Expected FASTQ header line, saw %s" % header_line)
-    # Remove '@' from beginning of line
-    header_line = header_line[1:].rstrip()
-    run_delim, read_delim = header_line.split(" ")
-    run_keys = ("instrument", "run_number", "flowcell_id", "lane")
-    info = _collect_delimited_vals(run_delim, run_keys)
-    read_keys = ("read", "is_filtered", "control_num", "barcode_seq")
-    info.update(_collect_delimited_vals(read_delim, read_keys))
-    return info
-
-def _collect_delimited_vals(text, keys, sep=":"):
-    vals = text.split(sep)
-    return dict(zip(keys, vals))
 
 class SampleRegistry(object):
     def __init__(self, registry_db):
