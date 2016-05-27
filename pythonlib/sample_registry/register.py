@@ -9,9 +9,8 @@ import gzip
 
 from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
-from sample_registry.illumina import (
-    parse_illumina_fastq_header, parse_illumina_folder_date,
-)
+from sample_registry.illumina import IlluminaGzipFastq
+
 
 __THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 REGISTRY_DATABASE = CoreDb(__THIS_DIR + "/../../website/core.db")
@@ -79,11 +78,11 @@ def register_sample_annotations(
         help=SAMPLE_TABLE_HELP)
     args = p.parse_args(argv)
 
-    registry = SampleRegistry(coredb)
     sample_table = SampleTable.load(args.sample_table)
     sample_table.look_up_nextera_barcodes()
     sample_table.validate()
 
+    registry = SampleRegistry(coredb)
     registry.check_run_accession(args.run_accession)
     if register_samples:
         registry.register_samples(args.run_accession, sample_table)
@@ -91,39 +90,39 @@ def register_sample_annotations(
 
 
 def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
-    p = argparse.ArgumentParser(
-        description="Add a new run to the registry from an Illumina FASTQ file")
-    p.add_argument("filepath", type=argparse.FileType("r"))
-    p.add_argument("--date", help="Run date (YYYY-MM-DD)")
-    p.add_argument("--comment", required=True, help="Comment (free text)")
+    p = argparse.ArgumentParser(description=(
+        "Add a new run to the registry from a gzipped Illumina FASTQ file"))
+    p.add_argument("file", type=argparse.FileType("r"))
+    p.add_argument("comment", help="Comment (free text)")
     args = p.parse_args(argv)
 
-    if args.filepath.name.endswith(".gz"):
-        fastq_file = gzip.GzipFile(fileobj=args.filepath)
-    else:
-        fastq_file = args.filepath
-    fastq_info = parse_illumina_fastq_header(fastq_file)
-
-    if args.date is not None:
-        date = args.date
-    else:
-        date = parse_illumina_folder_date(args.filepath.name)
-    if date is None:
-        p.error("No --date supplied, could not find date in folder name.")
-
-    if fastq_info["instrument"].startswith("D"):
-        run_type = "Illumina-HiSeq"
-    else:
-        run_type = "Illumina-MiSeq"
-    lane = fastq_info["lane"]
-    fastq_filepath = args.filepath.name
-
+    f = IlluminaGzipFastq(fileobj=args.file)
     acc = coredb.register_run(
-        date, run_type, "Nextera XT", lane, fastq_filepath, args.comment)
+        f.date, f.machine_type, "Nextera XT", f.lane, f.filepath, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
 
 
 def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+    p = argparse.ArgumentParser(
+        description="Add a new run to the registry")
+    # Should be positional argument. Read additional info straight
+    # from the file.  Maybe support a manual override, or just edit
+    # the database directly.
+    p.add_argument("file", help="Resource filepath (not checked)")
+    p.add_argument("--date", required=True, help="Run date (YYYY-MM-DD)")
+    p.add_argument("--comment", required=True, help="Comment (free text)")
+    p.add_argument(
+        "--type", default="Immulina-MiSeq", choices=SampleRegistry.machines,
+        help="Machine type")
+    p.add_argument("--lane", default="1", help="Lane number")
+    args = p.parse_args(argv)
+
+    acc = coredb.register_run(
+        args.date, args.type, "Nextera XT", args.lane, args.file, args.comment)
+    out.write(u"Registered run %s in the database\n" % acc)
+
+
+class SampleRegistry(object):
     machines = [
         "Illumina-MiSeq",
         "Illumina-HiSeq",
@@ -132,41 +131,6 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
         "Nextera XT"
     ]
 
-    p = argparse.ArgumentParser(
-        description="Add a new run to the registry")
-    # Should be positional argument. Read additional info straight
-    # from the file.  Maybe support a manual override, or just edit
-    # the database directly.
-    p.add_argument(
-        "--file", required=True,
-        help="Resource filepath (not checked for validity)")
-    # Remove and read from file
-    p.add_argument(
-        "--date", required=True,
-        help="Run date (YYYY-MM-DD)")
-    # Keep this
-    p.add_argument(
-        "--comment", required=True,
-        help="Comment (free text)")
-    # Remove and read from file
-    p.add_argument(
-        "--type", default="Immulina-MiSeq", choices=machines,
-        help="Machine type")
-    # Keep this?
-    p.add_argument(
-        "--kit", default="Nextera XT", choices=kits,
-        help="Machine kit")
-    # Remove and read from file
-    p.add_argument("--lane", default="1",
-        help="Lane number")
-    args = p.parse_args(argv)
-
-    acc = coredb.register_run(
-        args.date, args.type, args.kit, args.lane, args.file, args.comment)
-    out.write(u"Registered run %s in the database\n" % acc)
-
-
-class SampleRegistry(object):
     def __init__(self, registry_db):
         self.db = registry_db
 

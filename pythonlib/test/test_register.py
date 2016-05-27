@@ -1,6 +1,7 @@
 import gzip
 import io
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -25,11 +26,10 @@ class RegisterScriptTests(unittest.TestCase):
         self.db = CoreDb(":memory:")
         self.db.create_tables()
         self.run_args = [
-            "--file", "abc",
+            "abc",
             "--lane", "1",
             "--date", "2008-09-21",
             "--type", "Illumina-MiSeq",
-            "--kit", "Nextera XT",
             "--comment", "mdsnfa adsf",
         ]
         self.samples = [{
@@ -73,13 +73,14 @@ class RegisterScriptTests(unittest.TestCase):
         os.chdir(tmp_dir)
         try:
             register_illumina_file(
-                [relative_fp, "--comment", "abcd"], self.db, out)
+                [relative_fp, "abcd efg"], self.db, out)
         finally:
             os.chdir(original_cwd)
+            shutil.rmtree(tmp_dir)
 
         self.assertEqual(self.db._query_run(1), (
             u'2016-05-11', u'Illumina-MiSeq', u'Nextera XT', 1,
-            unicode(relative_fp), u'abcd'))
+            unicode(relative_fp), u'abcd efg'))
 
     def test_register_samples(self):
         register_run(self.run_args, self.db)
