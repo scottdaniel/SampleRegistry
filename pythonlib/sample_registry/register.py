@@ -9,7 +9,7 @@ import gzip
 
 from sample_registry.db import CoreDb
 from sample_registry.mapping import SampleTable
-from sample_registry.illumina import IlluminaGzipFastq
+from sample_registry.illumina import IlluminaFastq
 
 
 __THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -96,7 +96,7 @@ def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p.add_argument("comment", help="Comment (free text)")
     args = p.parse_args(argv)
 
-    f = IlluminaGzipFastq(fileobj=args.file)
+    f = IlluminaFastq(gzip.GzipFile(fileobj=args.file))
     acc = coredb.register_run(
         f.date, f.machine_type, "Nextera XT", f.lane, f.filepath, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
@@ -105,9 +105,6 @@ def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
 def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(
         description="Add a new run to the registry")
-    # Should be positional argument. Read additional info straight
-    # from the file.  Maybe support a manual override, or just edit
-    # the database directly.
     p.add_argument("file", help="Resource filepath (not checked)")
     p.add_argument("--date", required=True, help="Run date (YYYY-MM-DD)")
     p.add_argument("--comment", required=True, help="Comment (free text)")

@@ -3,16 +3,15 @@ import os.path
 import re
 
 
-class IlluminaGzipFastq(object):
+class IlluminaFastq(object):
     machine_types = {"D": "Illumina-HiSeq", "M": "Illumina-MiSeq"}
 
-    def __init__(self, fileobj):
-        self.file = fileobj
+    def __init__(self, f):
+        self.file = f
         self.fastq_info = self._parse_header()
 
     def _parse_header(self):
-        f = gzip.GzipFile(fileobj=self.file)
-        line = next(f).strip()
+        line = next(self.file).strip()
         if not line.startswith("@"):
             raise ValueError("Not a FASTQ header line")
         # Remove first character, @
