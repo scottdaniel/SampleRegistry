@@ -61,5 +61,3 @@ foreach ($hostspecies_counts as $s) {
 }
 ?>
 </table>
-
-<p>All samples with a Primer sequence should have a ReversePrimer sequence: <?= $num_samples_with_reverse_primer ?> of <?= $num_samples_with_primer ?> (<?= sprintf("%.2f", 100 * $num_samples_with_reverse_primer / $num_samples_with_primer) ?>%).</p>

@@ -22,6 +22,7 @@
 	    <ul>
           <li><a href="<?= url_for('runs') ?>">Runs</a></li>
           <li><a href="<?= url_for('tags') ?>">Metadata</a></li>
+          <li><a href="<?= url_for('stats') ?>">Stats</a></li>
         </ul>
 	  </div>
 	  <div class="logoarea span-8 last">
