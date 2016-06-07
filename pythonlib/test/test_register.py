@@ -10,6 +10,8 @@ from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
     unregister_samples, register_illumina_file,
+    register_sample_types,
+    register_host_species,
 )
 
 
@@ -129,3 +131,55 @@ class RegisterScriptTests(unittest.TestCase):
         self.assertEqual(self.db._query_nonstandard_annotations(1), {})
         self.assertEqual(self.db.query_sample_accessions(1), [])
 
+    def test_register_sample_types(self):
+        f = tempfile.NamedTemporaryFile("wt")
+        f.write(SAMPLE_TYPES_TSV)
+        f.seek(0)
+
+        register_sample_types([f.name], self.db)
+        self.assertEqual(
+            self.db.query_standard_sample_types(),
+            SAMPLE_TYPES_VALS)
+
+    def test_register_host_species(self):
+        f = tempfile.NamedTemporaryFile("wt")
+        f.write(HOST_SPECIES_TSV)
+        f.seek(0)
+
+        register_host_species([f.name], self.db)
+        self.assertEqual(
+            self.db.query_standard_host_species(),
+            HOST_SPECIES_VALS)
+
+
+SAMPLE_TYPES_TSV = """\
+sample_type	host_associated	description
+
+# Gut
+Feces	1	Human and animal fecal material.
+Rectal swab	1	Results are sensitive to collection method.
+Ostomy fluid	1	
+Colonic biopsy	1	
+
+# Oral
+Oral wash	1	
+"""
+
+SAMPLE_TYPES_VALS = [
+    ("Feces", 1, "Human and animal fecal material."),
+    ("Rectal swab", 1, "Results are sensitive to collection method."),
+    ("Ostomy fluid", 1, ""),
+    ("Colonic biopsy", 1, ""),
+    ("Oral wash", 1, ""),
+]
+
+HOST_SPECIES_TSV = """\
+host_species	scientific_name	ncbi_taxid
+Human	Homo sapiens	9606
+Mouse	Mus musculus	10090
+"""
+
+HOST_SPECIES_VALS = [
+    ("Human", "Homo sapiens", 9606),
+    ("Mouse", "Mus musculus", 10090),
+]

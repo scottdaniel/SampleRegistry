@@ -80,6 +80,56 @@ class CoreDb(object):
         "WHERE sample_accession = ?"
         )
 
+    select_standard_sample_types = (
+        "SELECT sample_type, host_associated, comment "
+        "FROM standard_sample_types"
+    )
+
+    insert_standard_sample_type = (
+        "INSERT INTO standard_sample_types "
+        "(`sample_type`, `host_associated`, `comment`) "
+        "VALUES (?, ?, ?)"
+    )
+
+    select_standard_host_species = (
+        "SELECT host_species, scientific_name, ncbi_taxon_id "
+        "FROM standard_host_species"
+    )
+
+    insert_standard_host_species = (
+        "INSERT INTO standard_host_species "
+        "(`host_species`, `scientific_name`, `ncbi_taxon_id`) "
+        "VALUES (?, ?, ?)"
+    )
+
+    def query_standard_sample_types(self):
+        cur = self.con.cursor()
+        cur.execute(self.select_standard_sample_types)
+        self.con.commit()
+        res = cur.fetchall()
+        cur.close()
+        return res
+
+    def register_standard_sample_types(self, sample_types):
+        cur = self.con.cursor()
+        cur.executemany(self.insert_standard_sample_type, sample_types)
+        self.con.commit()
+        cur.close()
+
+    def query_standard_host_species(self):
+        cur = self.con.cursor()
+        cur.execute(self.select_standard_host_species)
+        self.con.commit()
+        res = cur.fetchall()
+        cur.close()
+        return res
+
+    def register_standard_host_species(self, host_species):
+        cur = self.con.cursor()
+        cur.executemany(self.insert_standard_host_species, host_species)
+        self.con.commit()
+        cur.close()
+
     def create_tables(self):
         """Creates the necessary tables in a new database file.
         """
@@ -127,7 +177,7 @@ class CoreDb(object):
         res = cur.fetchone()
         cur.close()
         return res
-    
+
     def register_samples(self, run_accession, sample_bcs):
         """Registers samples from tuples of SampleID, BarcodeSequence.
 

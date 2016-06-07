@@ -3,68 +3,68 @@ sample_type	host_associated	description
 # Gut
 Feces	1	Human and animal fecal material.
 Rectal swab	1	We have observed that results are sensitive to exact collection method employed, please include notes in publication.
-Ostomy fluid	1
-Colonic biopsy	1
+Ostomy fluid	1	
+Colonic biopsy	1	
 
 # Oral
-Oral wash	1
-Saliva	1
+Oral wash	1	
+Saliva	1	
 Oral swab	1	To be used when oral sampling site is not known.  Prefer cheek, gum, oropharyngeal, or tongue swab when available.
-Oropharyngeal swab	1
-Plaque	1
+Oropharyngeal swab	1	
+Plaque	1	
 
 # Nasal
-Nasopharyngeal swab	1
+Nasopharyngeal swab	1	
 
 # Low-bacteria sites
-Tissue	1
+Tissue	1	
 Blood	1	
-Serum	1
-Plasma	1
-Bone marrow	1
+Serum	1	
+Plasma	1	
+Bone marrow	1	
 
 # Lung
-BAL	1
-Bronchoscope pre-wash	1
-Bronchoscope 1 pre-wash	1
-Bronchoscope 1 post-wash	1
-Bronchoscope 1 tip swab	1
-Bronchoscope 2 pre-wash	1
-BAL A 1st return	1
-BAL A 2nd return	1
-BAL B	1
-BAL PSB	1
+BAL	1	
+Bronchoscope pre-wash	1	
+Bronchoscope 1 pre-wash	1	
+Bronchoscope 1 post-wash	1	
+Bronchoscope 1 tip swab	1	
+Bronchoscope 2 pre-wash	1	
+BAL A 1st return	1	
+BAL A 2nd return	1	
+BAL B	1	
+BAL PSB	1	
 
 # Negative control
-PCR water	0
-Sterile swab	0
-Saline	0
-Scissors swab	0
-Lab water	0
-Surface swab	0
+PCR water	0	
+Sterile swab	0	
+Saline	0	
+Scissors swab	0	
+Lab water	0	
+Surface swab	0	
 
 # Positive control
-Mock DNA	0
+Mock DNA	0	
 
 # Gut by dissection
-Lumenal contents, small intestine	1
-Mucosa, small intestine	1
-Lumenal contents, cecum	1
-Mucosa, cecum	1
-Lumenal contents, colon	1
-Mucosa, colon	1
+Lumenal contents, small intestine	1	
+Mucosa, small intestine	1	
+Lumenal contents, cecum	1	
+Mucosa, cecum	1	
+Lumenal contents, colon	1	
+Mucosa, colon	1	
 
 # Other mouse-related
-Mouse chow	1
-Bedding	1
+Mouse chow	1	
+Bedding	1	
 
 # Other baby-related
-Breast milk	1
-Areolar swab	1
-Breast swab	1
+Breast milk	1	
+Areolar swab	1	
+Breast swab	1	
 
 # Vaginal
-Vaginal swab	1
+Vaginal swab	1	
 
 
 

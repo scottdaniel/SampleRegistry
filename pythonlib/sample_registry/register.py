@@ -87,6 +87,44 @@ def register_sample_annotations(
         registry.register_samples(args.run_accession, sample_table)
     registry.register_annotations(args.run_accession, sample_table)
 
+def parse_tsv_ncol(f, ncol):
+    assert(ncol > 0)
+    # Skip header
+    next(f)
+    for line in f:
+        line = line.rstrip("\n")
+        if line.startswith("#"):
+            continue
+        if not line.strip():
+            continue
+        vals = line.split("\t")
+        if len(vals) < ncol:
+            raise ValueError(
+                "Each line must contain at least {} fields".format(ncol))
+        yield tuple(vals[:ncol])
+
+
+def register_sample_types(
+        argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+    p = argparse.ArgumentParser(description=(
+        "Update the list of standard sample types in the registry"))
+    p.add_argument("file", type=argparse.FileType("r"))
+    args = p.parse_args(argv)
+
+    sample_types = list(parse_tsv_ncol(args.file, 3))
+    coredb.register_standard_sample_types(sample_types)
+
+
+def register_host_species(
+        argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+    p = argparse.ArgumentParser(description=(
+        "Update the list of standard host species in the registry"))
+    p.add_argument("file", type=argparse.FileType("r"))
+    args = p.parse_args(argv)
+
+    host_species = list(parse_tsv_ncol(args.file, 3))
+    coredb.register_standard_host_species(host_species)
+
 
 def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(description=(

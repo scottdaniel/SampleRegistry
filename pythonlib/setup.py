@@ -17,6 +17,8 @@ setup(
         'unregister_samples = sample_registry.register:unregister_samples',
         'register_samples = sample_registry.register:register_samples',
         'register_annotations = sample_registry.register:register_annotations',
+        'register_host_species = sample_registry.register:register_host_species',
+        'register_sample_types = sample_registry.register:register_sample_types',
         ]},
     )
 

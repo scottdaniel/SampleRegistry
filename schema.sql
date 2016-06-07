@@ -110,22 +110,12 @@ CREATE VIEW annotation_vals_by_run AS
 
 CREATE TABLE IF NOT EXISTS standard_sample_types (
   `sample_type` TEXT NOT NULL UNIQUE,
-  `host_associated` INTEGER NOT NULL
+  `host_associated` INTEGER NOT NULL,
+  `comment` TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS standard_host_species (
   `host_species` TEXT NOT NULL UNIQUE,
-  `ncbi_taxon_id` INTEGER NOT NULL
+  `scientific_name` TEXT NOT NULL UNIQUE,
+  `ncbi_taxon_id` INTEGER NOT NULL UNIQUE
 );
-
-INSERT INTO standard_sample_types VALUES ("Feces", 1);
-INSERT INTO standard_sample_types VALUES ("Rectal swab", 1);
-INSERT INTO standard_sample_types VALUES ("Ostomy fluid", 1);
-INSERT INTO standard_sample_types VALUES ("Nasopharyngeal swab", 1);
-INSERT INTO standard_sample_types VALUES ("Oropharyngeal swab", 1);
-INSERT INTO standard_sample_types VALUES ("Tongue swab", 1);
-INSERT INTO standard_sample_types VALUES ("Mock DNA", 0);
-INSERT INTO standard_sample_types VALUES ("PCR water", 0);
-
-INSERT INTO standard_host_species VALUES ("Human", 9606);
-INSERT INTO standard_host_species VALUES ("Mouse", 10090);
