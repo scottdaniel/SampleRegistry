@@ -194,7 +194,8 @@ function query_nonstandard_hostspecies_counts() {
             'num_samples' => 'COUNT(samples.sample_accession)'))
         ->left_outer_join('standard_host_species', array(
             'samples.host_species', '=', 'standard_host_species.host_species'))
-	->where_null('standard_host_species.host_species')
+        ->where_null('standard_host_species.host_species')
+        ->where_not_null('samples.host_species')
         ->group_by('samples.host_species')
         ->order_by_desc('num_samples')
         ->find_many();
