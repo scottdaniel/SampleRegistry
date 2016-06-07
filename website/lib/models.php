@@ -127,14 +127,14 @@ function query_total_standard_sampletypes() {
 }
 
 function query_sampletype_counts() {
-    return ORM::for_table('samples')
+    return ORM::for_table('standard_sample_types')
         ->select_many_expr(array(
-            'sample_type' => 'samples.sample_type',
-            'num_samples' => 'COUNT(samples.sample_type)',
+            'sample_type' => 'standard_sample_types.sample_type',
+            'num_samples' => 'COUNT(samples.sample_accession)',
             'host_associated' => 'standard_sample_types.host_associated'))
-        ->left_outer_join('standard_sample_types', array(
-            'samples.sample_type', '=', 'standard_sample_types.sample_type'))
-        ->group_by('samples.sample_type')
+        ->left_outer_join('samples', array(
+            'standard_sample_types.sample_type', '=', 'samples.sample_type'))
+        ->group_by('standard_sample_types.sample_type')
         ->order_by_desc('num_samples')
         ->find_many();
 }
@@ -162,14 +162,14 @@ function query_total_standard_hostspecies() {
 }
 
 function query_hostspecies_counts() {
-    return ORM::for_table('samples')
+    return ORM::for_table('standard_host_species')
         ->select_many_expr(array(
-            'host_species' => 'samples.host_species',
-            'num_samples' => 'COUNT(samples.host_species)',
+            'host_species' => 'standard_host_species.host_species',
+            'num_samples' => 'COUNT(samples.sample_accession)',
             'ncbi_taxon_id' => 'standard_host_species.ncbi_taxon_id'))
-        ->left_outer_join('standard_host_species', array(
-            'samples.host_species', '=', 'standard_host_species.host_species'))
-        ->group_by('samples.host_species')
+        ->left_outer_join('samples', array(
+            'standard_host_species.host_species', '=', 'samples.host_species'))
+        ->group_by('standard_host_species.host_species')
         ->order_by_desc('num_samples')
         ->find_many();
 }
