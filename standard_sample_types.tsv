@@ -10,6 +10,8 @@ Colonic biopsy	1
 Oral wash	1	
 Saliva	1	
 Oral swab	1	To be used when oral sampling site is not known.  Prefer cheek, gum, oropharyngeal, or tongue swab when available.
+Tongue swab	1	
+Cheek swab	1	
 Oropharyngeal swab	1	
 Plaque	1	
 
@@ -47,6 +49,7 @@ Surface swab	0
 Mock DNA	0	
 
 # Gut by dissection
+Whole gut	1	From dissection.
 Lumenal contents, small intestine	1	
 Mucosa, small intestine	1	
 Lumenal contents, cecum	1	

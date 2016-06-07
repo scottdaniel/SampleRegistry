@@ -1,3 +1,4 @@
 host_species	scientific_name	ncbi_taxid
 Human	Homo sapiens	9606
 Mouse	Mus musculus	10090
+Rat	Rattus norvegicus	10116
