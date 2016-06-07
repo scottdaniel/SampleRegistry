@@ -141,6 +141,17 @@ class RegisterScriptTests(unittest.TestCase):
             self.db.query_standard_sample_types(),
             SAMPLE_TYPES_VALS)
 
+        # Add a new sample type and re-register
+        new_line = "Extra type	1	Just to test"
+        f2 = tempfile.NamedTemporaryFile("wt")
+        f2.write(SAMPLE_TYPES_TSV + new_line)
+        f2.seek(0)
+
+        register_sample_types([f2.name], self.db)
+        self.assertEqual(
+            self.db.query_standard_sample_types(),
+            SAMPLE_TYPES_VALS + [("Extra type", 1, "Just to test")])
+
     def test_register_host_species(self):
         f = tempfile.NamedTemporaryFile("wt")
         f.write(HOST_SPECIES_TSV)
@@ -150,6 +161,17 @@ class RegisterScriptTests(unittest.TestCase):
         self.assertEqual(
             self.db.query_standard_host_species(),
             HOST_SPECIES_VALS)
+
+        # Add a new species to the file and re-register
+        new_line = "Hippo	Test	1243"
+        f2 = tempfile.NamedTemporaryFile("wt")
+        f2.write(HOST_SPECIES_TSV + new_line)
+        f2.seek(0)
+
+        register_host_species([f2.name], self.db)
+        self.assertEqual(
+            self.db.query_standard_host_species(),
+            HOST_SPECIES_VALS + [("Hippo", "Test", 1243)])
 
 
 SAMPLE_TYPES_TSV = """\

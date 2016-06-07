@@ -91,6 +91,11 @@ class CoreDb(object):
         "VALUES (?, ?, ?)"
     )
 
+    delete_standard_sample_types = (
+        "DELETE FROM standard_sample_types "
+        "WHERE 1"
+    )
+
     select_standard_host_species = (
         "SELECT host_species, scientific_name, ncbi_taxon_id "
         "FROM standard_host_species"
@@ -100,6 +105,11 @@ class CoreDb(object):
         "INSERT INTO standard_host_species "
         "(`host_species`, `scientific_name`, `ncbi_taxon_id`) "
         "VALUES (?, ?, ?)"
+    )
+
+    delete_standard_host_species = (
+        "DELETE FROM standard_host_species "
+        "WHERE 1"
     )
 
     def query_standard_sample_types(self):
@@ -116,6 +126,12 @@ class CoreDb(object):
         self.con.commit()
         cur.close()
 
+    def remove_standard_sample_types(self):
+        cur = self.con.cursor()
+        cur.execute(self.delete_standard_sample_types)
+        self.con.commit()
+        cur.close()
+
     def query_standard_host_species(self):
         cur = self.con.cursor()
         cur.execute(self.select_standard_host_species)
@@ -127,6 +143,12 @@ class CoreDb(object):
     def register_standard_host_species(self, host_species):
         cur = self.con.cursor()
         cur.executemany(self.insert_standard_host_species, host_species)
+        self.con.commit()
+        cur.close()
+
+    def remove_standard_host_species(self):
+        cur = self.con.cursor()
+        cur.execute(self.delete_standard_host_species)
         self.con.commit()
         cur.close()
 

@@ -112,6 +112,7 @@ def register_sample_types(
     args = p.parse_args(argv)
 
     sample_types = list(parse_tsv_ncol(args.file, 3))
+    coredb.remove_standard_sample_types()
     coredb.register_standard_sample_types(sample_types)
 
 
@@ -123,6 +124,7 @@ def register_host_species(
     args = p.parse_args(argv)
 
     host_species = list(parse_tsv_ncol(args.file, 3))
+    coredb.remove_standard_host_species()
     coredb.register_standard_host_species(host_species)
 
 
