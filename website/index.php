@@ -87,14 +87,16 @@ function show_stats() {
 
     set('num_samples_with_sampletype', query_total_sampletypes());
     set('num_samples_with_standard_sampletype', query_total_standard_sampletypes());
-    set('sampletype_counts', query_sampletype_counts());
+    set('standard_sampletype_counts', query_standard_sampletype_counts());
+    set('nonstandard_sampletype_counts', query_nonstandard_sampletype_counts());
 
     set('num_subjectid', query_num_subjectid());
     set('num_subjectid_with_hostspecies', query_num_subjectid_with_hostspecies());
 
     set('num_samples_with_hostspecies', query_total_hostspecies());
     set('num_samples_with_standard_hostspecies', query_total_standard_hostspecies());
-    set('hostspecies_counts', query_hostspecies_counts());
+    set('standard_hostspecies_counts', query_standard_hostspecies_counts());
+    set('nonstandard_hostspecies_counts', query_nonstandard_hostspecies_counts());
 
     set('num_samples_with_primer', query_num_primer());
     set('num_samples_with_reverse_primer', query_num_reverse_primer());

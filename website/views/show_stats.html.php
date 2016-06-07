@@ -6,12 +6,10 @@ Standard sample types:
 <table>
 <tr><th>SampleType</th><th>Count</th></tr>
 <?php
-foreach ($sampletype_counts as $s) {
-    if (!is_null($s->host_associated)) {
+foreach ($standard_sampletype_counts as $s) {
 ?>
 <tr><td><?= $s->sample_type ?></td><td><?= $s->num_samples ?></td></tr>
 <?php
-    }
  }
 ?>
 </table>
@@ -20,12 +18,10 @@ Nonstandard sample types:
 <table>
 <tr><th>SampleType</th><th>Count</th></tr>
 <?php 
-foreach ($sampletype_counts as $s) { 
-    if (is_null($s->host_associated)) {
+foreach ($nonstandard_sampletype_counts as $s) {
 ?>
 <tr><td><?= $s->sample_type ?></td><td><?= $s->num_samples ?></td></tr>
 <?php
-    }
 }
 ?>
 </table>
@@ -38,12 +34,10 @@ Standard host species:
 <table>
 <tr><th>HostSpecies</th><th>Count</th></tr>
 <?php
-foreach ($hostspecies_counts as $s) {
-    if (!is_null($s->ncbi_taxon_id)) {
+foreach ($standard_hostspecies_counts as $s) {
 ?>
 <tr><td><?= $s->host_species ?></td><td><?= $s->num_samples ?></td></tr>
 <?php
-    }
 }
 ?>
 </table>
@@ -52,12 +46,10 @@ Nonstandard host species:
 <table>
 <tr><th>HostSpecies</th><th>Count</th></tr>
 <?php
-foreach ($hostspecies_counts as $s) {
-    if (is_null($s->ncbi_taxon_id)) {
+foreach ($nonstandard_hostspecies_counts as $s) {
 ?>
 <tr><td><?= $s->host_species ?></td><td><?= $s->num_samples ?></td></tr>
 <?php
-    }
 }
 ?>
 </table>
