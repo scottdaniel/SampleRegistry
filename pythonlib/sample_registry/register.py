@@ -100,7 +100,7 @@ def parse_tsv_ncol(f, ncol):
         vals = line.split("\t")
         if len(vals) < ncol:
             raise ValueError(
-                "Each line must contain at least {} fields".format(ncol))
+                "Each line must contain at least {0} fields".format(ncol))
         yield tuple(vals[:ncol])
 
 
