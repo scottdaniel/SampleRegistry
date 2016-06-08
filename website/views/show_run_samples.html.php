@@ -8,7 +8,7 @@
     <li><strong>Date:</strong> <?= format_date($run->run_date) ?></li>
     <li><strong>Lane:</strong> <?= $run->lane ?></li>
     <li><strong>Platform:</strong> <?= $run->machine_type ?> <?= $run->machine_kit ?></li>
-    <li><strong>Data file:</strong> <a href="<?= $run->data_uri ?>"><?= basename($run->data_uri) ?></a></li>
+    <li><strong>Data file:</strong> <a href="respublica.research.chop.edu:/mnt/isilon/microbiome/<?= $run->data_uri ?>"><?= basename($run->data_uri) ?></a></li>
   </ul>
   <p>
     <strong>Export metadata for all samples:</strong><br />
