@@ -6,6 +6,11 @@ Rectal swab	1	We have observed that results are sensitive to exact collection me
 Ostomy fluid	1	
 Colonic biopsy	1	
 
+# Artificial gut
+SHIME ascending	0	First compartment of SHIME apparatus.
+SHIME transverse	0	Second compartment of SHIME apparatus.
+SHIME descending	0	Third comartment of SHIME apparatus.
+
 # Oral
 Oral wash	1	
 Saliva	1	
@@ -24,6 +29,9 @@ Blood	1
 Serum	1	
 Plasma	1	
 Bone marrow	1	
+
+# Esophageal
+Esophageal biopsy	1
 
 # Lung
 BAL	1	
