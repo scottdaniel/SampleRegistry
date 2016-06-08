@@ -2,51 +2,19 @@ sample_type	host_associated	description
 Feces	1	Human and animal fecal material.
 Rectal swab	1	We have observed that results are sensitive to exact collection method employed, please include notes in publication.
 Ostomy fluid	1	
-Colonic biopsy	1	
 SHIME ascending	0	First compartment of SHIME apparatus.
 SHIME transverse	0	Second compartment of SHIME apparatus.
 SHIME descending	0	Third comartment of SHIME apparatus.
-Oral wash	1	
-Saliva	1	
-Oral swab	1	To be used when oral sampling site is not known.  Prefer cheek, gum, oropharyngeal, or tongue swab when available.
+Oral wash	1	Swish and spit with saline.
+Oral swab	1	To be used when oral sampling site is not known.  Use a more specific type if possible.
 Tongue swab	1	
 Cheek swab	1	
 Oropharyngeal swab	1	
-Plaque	1	
 Nasopharyngeal swab	1	
-Tissue	1	
-Blood	1	
-Serum	1	
-Plasma	1	
-Bone marrow	1	
 Esophageal biopsy	1	
 BAL	1	
-Bronchoscope pre-wash	1	
-Bronchoscope 1 pre-wash	1	
-Bronchoscope 1 post-wash	1	
-Bronchoscope 1 tip swab	1	
-Bronchoscope 2 pre-wash	1	
-BAL A 1st return	1	
-BAL A 2nd return	1	
-BAL B	1	
-BAL PSB	1	
 PCR water	0	
-Sterile swab	0	
-Saline	0	
-Scissors swab	0	
+Sterile swab	0	Swab taken out of packaging in sequencing lab immediately before extraction.
 Lab water	0	
-Surface swab	0	
 Mock DNA	0	
 Whole gut	1	From dissection.
-Lumenal contents, small intestine	1	
-Mucosa, small intestine	1	
-Lumenal contents, cecum	1	
-Mucosa, cecum	1	
-Lumenal contents, colon	1	
-Mucosa, colon	1	
-Mouse chow	1	
-Bedding	1	
-Breast milk	1	
-Areolar swab	1	
-Breast swab	1	
-Vaginal swab	1	
