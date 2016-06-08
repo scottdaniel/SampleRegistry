@@ -9,11 +9,11 @@ function format_date($date_str) {
 }
 
 function format_sample_accession($n) {
-    return sprintf("PCMP%06d", $n);
+    return sprintf("CMS%06d", $n);
 }
 
 function format_run_accession($n) {
-    return sprintf("PCMP%06d", $n);
+    return sprintf("CMR%06d", $n);
 }
 
 function cast_annotations($annotations, $samples, $default = "NA") {

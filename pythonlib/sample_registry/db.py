@@ -2,7 +2,6 @@ import collections
 import os.path
 import sqlite3
 
-from sample_registry.models import Sample, Run
 
 class CoreDb(object):
     def __init__(self, database_fp):
