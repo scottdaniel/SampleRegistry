@@ -56,6 +56,26 @@ function query_multisample_annotations($samples) {
     foreach($samples as $s) {
         $sample_accessions[] = $s->sample_accession;
     }
+
+    # Process in 500 sample chunks for SQLite
+    # SQLITE_MAX_VARIABLE_NUMBER is set to 999
+    $chunk_size = 500;
+    $num_samples = count($sample_accessions);
+    $metadata = array();
+    $offset = 0;
+    while ($offset < $num_samples) {
+        $chunk_accessions = array_slice($sample_accessions, $offset, $chunk_size);
+        $chunk_metadata = ORM::for_table('annotations')
+            ->where_in('sample_accession', $chunk_accessions)
+            ->find_many();
+        $metadata = array_merge($metadata, $chunk_metadata);
+        $offset = $offset + $chunk_size;
+    }
+
+    return $metadata;
+}
+
+function query_multisample_annotations_impl($sample_accessions) {
     $metadata = ORM::for_table('annotations')
         ->where_in('sample_accession', $sample_accessions)
         ->find_many();
