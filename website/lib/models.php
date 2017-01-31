@@ -75,13 +75,6 @@ function query_multisample_annotations($samples) {
     return $metadata;
 }
 
-function query_multisample_annotations_impl($sample_accessions) {
-    $metadata = ORM::for_table('annotations')
-        ->where_in('sample_accession', $sample_accessions)
-        ->find_many();
-    return $metadata;
-}
-
 function query_sample_annotations($sample_accession) {
     return ORM::for_table('annotations')
         ->where_in('sample_accession', $sample_accession)
