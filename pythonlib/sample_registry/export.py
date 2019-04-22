@@ -48,6 +48,10 @@ class IlluminaFastqFileSet(object):
             self.r1_filepath, self.allowed_file_extensions))
 
     @property
+    def is_gzip(self):
+        return self.r1_filepath.endswith(".gz")
+
+    @property
     def r1_base_filename(self):
         r1_filename = os.path.basename(self.r1_filepath)
         ext = self.file_extension
@@ -82,26 +86,35 @@ class IlluminaFastqFileSet(object):
     def i2_filepath(self):
         return self._illumina_fp(self.i2_code)
 
+    def open(self, fp):
+        if self.is_gzip:
+            return gzip.open(fp, mode="rt")
+        else:
+            return open(fp)
+
     def existing_file_set(self):
         fps = [
             self.r1_filepath, self.r2_filepath,
             self.i1_filepath, self.i2_filepath,
         ]
-        return [fp if os.path.exists(fp) else None for fp in fps]
+        return [self.open(fp) if os.path.exists(fp) else None for fp in fps]
 
 
 def export_samples(argv=None, db=REGISTRY_DATABASE):
     p = argparse.ArgumentParser()
     p.add_argument(
         "run_accession", type=int, help="Run accession number")
-    p.add_argument("-base-dir", default="/mnt/isilon/microbiome/",
+    p.add_argument("--output-dir", default="fastq_data",
+        help="Output directory (default: %(default)s)")
+    p.add_argument("--base-dir", default="/mnt/isilon/microbiome/",
         help="Base directory for relative filepaths in database")
     p.add_argument("--local-mnt", help="Local mount point")
     p.add_argument("--remote-mnt", help="Remote mount point")
     args = p.parse_args(argv)
-    
+
     # Use current dir for output
-    output_dir = os.getcwd()
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
 
     run_info = db._query_run(args.run_accession)
     if run_info is None:
@@ -124,8 +137,8 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
 
     # Make a FastqSequenceFile object
     fs = IlluminaFastqFileSet(run_fp)
-    seq_file = SequenceFile(**fs.existing_file_set())
+    seq_file = SequenceFile(*fs.existing_file_set())
 
     # Make a writer
-    writer = PairedFastqWriter(output_dir)
+    writer = PairedFastqWriter(args.output_dir)
     seq_file.demultiplex(assigner, writer)
