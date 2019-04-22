@@ -2,7 +2,6 @@ import unittest
 
 from sample_registry.db import CoreDb
 
-
 class CoreDbTests(unittest.TestCase):
     def setUp(self):
         self.db = CoreDb(":memory:")
@@ -57,6 +56,10 @@ class CoreDbTests(unittest.TestCase):
         self.db.register_samples(1, self.sample_bcs)
         self.assertEqual(
             self.db.query_sample_accessions(1), [1, 2, 3])
+
+    def test_query_sample_barcodes(self):
+        self.db.register_samples(1, self.sample_bcs)
+        self.assertEqual(self.db.query_sample_barcodes(1), self.sample_bcs)
 
     def test_remove_samples(self):
         self.db.register_samples(1, self.sample_bcs)

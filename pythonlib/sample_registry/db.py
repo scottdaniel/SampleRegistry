@@ -27,6 +27,11 @@ class CoreDb(object):
         "SELECT sample_accession FROM samples WHERE run_accession = ?"
     )
 
+    select_sample_names_and_bc = (
+        "SELECT sample_name, barcode_sequence FROM samples WHERE "
+        "run_accession = ?"
+    )
+
     delete_sample = (
         "DELETE FROM samples WHERE sample_accession = ?"
     )
@@ -245,6 +250,15 @@ class CoreDb(object):
         res = cur.fetchall()
         cur.close()
         return [r[0] for r in res]
+
+    def query_sample_barcodes(self, run_accession):
+        """Find sample names and barcodes for a run."""
+        cur = self.con.cursor()
+        cur.execute(self.select_sample_names_and_bc, (run_accession, ))
+        self.con.commit()
+        res = cur.fetchall()
+        cur.close()
+        return list(res)
 
     def remove_samples(self, sample_accessions):
         """Removes samples by accession number."""
