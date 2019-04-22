@@ -11,6 +11,7 @@ setup(
     author_email='kylebitinger@gmail.com',
     url='http://github.com/PennChopMicrobiomeProgram/SampleRegistry',
     packages=['sample_registry'],
+    install_requires=['dnabc'],
     entry_points = {'console_scripts': [
         'register_run = sample_registry.register:register_run',
         'register_run_file = sample_registry.register:register_illumina_file',
@@ -19,6 +20,7 @@ setup(
         'register_annotations = sample_registry.register:register_annotations',
         'register_host_species = sample_registry.register:register_host_species',
         'register_sample_types = sample_registry.register:register_sample_types',
+        'export_samples = sample_registry.export:export_samples',
         ]},
     )
 
