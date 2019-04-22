@@ -66,7 +66,7 @@ class RegisterScriptTests(unittest.TestCase):
         os.makedirs(os.path.join(tmp_dir, fastq_dir))
         relative_fp = os.path.join(fastq_dir, fastq_name)
         absolute_fp = os.path.join(tmp_dir, relative_fp)
-        f = gzip.GzipFile(absolute_fp, "w")
+        f = gzip.open(absolute_fp, "wt")
         f.write("@M03543:21:C8LJ2ANXX:1:2209:1084:2044 1:N:0:NNNNNNNN+NNNNNNNN")
         f.close()
 
@@ -82,7 +82,7 @@ class RegisterScriptTests(unittest.TestCase):
 
         self.assertEqual(self.db._query_run(1), (
             u'2016-05-11', u'Illumina-MiSeq', u'Nextera XT', 1,
-            unicode(relative_fp), u'abcd efg'))
+            relative_fp, u'abcd efg'))
 
     def test_register_samples(self):
         register_run(self.run_args, self.db)

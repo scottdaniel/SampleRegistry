@@ -131,14 +131,14 @@ def register_host_species(
 def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(description=(
         "Add a new run to the registry from a gzipped Illumina FASTQ file"))
-    p.add_argument("file", type=argparse.FileType("r"))
+    p.add_argument("file")
     p.add_argument("comment", help="Comment (free text)")
     args = p.parse_args(argv)
 
-    f = IlluminaFastq(gzip.GzipFile(fileobj=args.file))
+    f = IlluminaFastq(gzip.open(args.file, "rt"))
     acc = coredb.register_run(
         f.date, f.machine_type, "Nextera XT", f.lane, f.filepath, args.comment)
-    out.write(u"Registered run %s in the database\n" % acc)
+    out.write("Registered run {0} in the database\n".format(acc))
 
 
 def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
@@ -148,7 +148,7 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p.add_argument("--date", required=True, help="Run date (YYYY-MM-DD)")
     p.add_argument("--comment", required=True, help="Comment (free text)")
     p.add_argument(
-        "--type", default="Immulina-MiSeq", choices=SampleRegistry.machines,
+        "--type", default="Illumina-MiSeq", choices=SampleRegistry.machines,
         help="Machine type")
     p.add_argument("--lane", default="1", help="Lane number")
     args = p.parse_args(argv)
