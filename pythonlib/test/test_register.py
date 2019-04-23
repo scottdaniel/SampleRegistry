@@ -41,7 +41,7 @@ class RegisterScriptTests(unittest.TestCase):
             "bb": "cd e29",
         }]
 
-    def test_rgister_run(self):
+    def test_register_run(self):
         out = io.StringIO()
         register_run(self.run_args, self.db, out)
 
@@ -52,9 +52,7 @@ class RegisterScriptTests(unittest.TestCase):
         )
 
         # Check that attributes are saved in the database
-        self.assertEqual(self.db._query_run(1), (
-            u'2008-09-21', u'Illumina-MiSeq', u'Nextera XT', 1,
-            u'abc', u'mdsnfa adsf'))
+        self.assertEqual(self.db.query_run_file(1), "abc")
 
     def test_register_illumina_file(self):
         tmp_dir = tempfile.mkdtemp()
@@ -80,9 +78,7 @@ class RegisterScriptTests(unittest.TestCase):
             os.chdir(original_cwd)
             shutil.rmtree(tmp_dir)
 
-        self.assertEqual(self.db._query_run(1), (
-            u'2016-05-11', u'Illumina-MiSeq', u'Nextera XT', 1,
-            relative_fp, u'abcd efg'))
+        self.assertEqual(self.db.query_run_file(1), relative_fp)
 
     def test_register_samples(self):
         register_run(self.run_args, self.db)

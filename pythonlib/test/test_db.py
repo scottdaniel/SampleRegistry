@@ -27,8 +27,8 @@ class RegistryDatabaseTests(unittest.TestCase):
     def test_register_run(self):        
         self.assertEqual(self.run_acc, 1)
         self.assertTrue(self.db.query_run_exists(self.run_acc))
-        obs_run = self.db._query_run(self.run_acc)
-        self.assertEqual(self.run, obs_run)
+        obs_fp = self.db.query_run_file(self.run_acc)
+        self.assertEqual("run_file.fastq", obs_fp)
         # Registering the run twice should raise an error
         self.assertRaises(ValueError, self.db.register_run, *self.run)
 

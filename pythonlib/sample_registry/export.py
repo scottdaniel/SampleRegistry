@@ -121,10 +121,9 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
     if args.sqlite_db:
         db = RegistryDatabase(args.sqlite_db)
 
-    run_info = db._query_run(args.run_accession)
-    if run_info is None:
+    run_fp = db.query_run_file(args.run_accession)
+    if run_fp is None:
         raise ValueError("Run {0} not found.".format(args.run_accession))
-    run_fp = run_info[4]
 
     # Get the absolute filepath to the R1 file
     run_fp = absolute_filepath(run_fp, args.base_dir)

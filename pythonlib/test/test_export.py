@@ -52,10 +52,8 @@ class FilePathTests(unittest.TestCase):
             remote_mnt="/e/f", local_mnt="/g/h")
 
 class MockDb:
-    def _query_run(self, acc):
-        return (
-            "2015-10-11", "HiSeq", "Nextera XT", acc,
-            "data_R1.fastq.gz", "Bob's run")
+    def query_run_file(self, acc):
+        return "data_R1.fastq.gz"
 
     def query_sample_barcodes(self, acc):
         return [("SampleA", "AAAGGG")]

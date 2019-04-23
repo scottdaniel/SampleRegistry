@@ -10,10 +10,8 @@ class RegistryDatabase(object):
 
     select_run_fp = "SELECT run_accession FROM runs WHERE data_uri = ?"
     
-    select_run_acc = (
-        "SELECT run_date, machine_type, machine_kit, "
-        "lane, data_uri, comment "
-        "FROM runs WHERE run_accession = ?"
+    select_run = (
+        "SELECT data_uri FROM runs WHERE run_accession = ?"
         )
 
     select_sample_bc = (
@@ -172,10 +170,10 @@ class RegistryDatabase(object):
 
         Returns the accession number of the new run.
         """
-        existing_run = self._query_run_file(fp)
-        if existing_run:
+        existing_run_acc = self._query_run_from_file(fp)
+        if existing_run_acc:
             raise ValueError(
-                "Run data already registered as %s" % existing_run[0])
+                "Run data already registered as %s" % existing_run_acc)
         cur = self.con.cursor()
         cur.execute(
             self.insert_run,
@@ -185,24 +183,30 @@ class RegistryDatabase(object):
         cur.close()
         return accession
 
-    def _query_run_file(self, fp):
+    def _query_run_from_file(self, fp):
         cur = self.con.cursor()
         cur.execute(self.select_run_fp, (fp,))
         self.con.commit()
         res = cur.fetchone()
         cur.close()
-        return res
+        if res is not None:
+            return res[0]
+        else:
+            return None
 
     def query_run_exists(self, run_accession):
-        return self._query_run(run_accession) is not None
+        return self.query_run_file(run_accession) is not None
 
-    def _query_run(self, run_accession):
+    def query_run_file(self, run_accession):
         cur = self.con.cursor()
-        cur.execute(self.select_run_acc, (run_accession,))
+        cur.execute(self.select_run, (run_accession,))
         self.con.commit()
         res = cur.fetchone()
         cur.close()
-        return res
+        if res is not None:
+            return res[0]
+        else:
+            return None
 
     def register_samples(self, run_accession, sample_bcs):
         """Registers samples from tuples of SampleID, BarcodeSequence.
