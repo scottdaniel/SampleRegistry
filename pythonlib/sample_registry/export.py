@@ -3,6 +3,7 @@ import gzip
 import os
 
 
+from .db import CoreDb
 from .register import REGISTRY_DATABASE
 from dnabclib.assigner import BarcodeAssigner
 from dnabclib.sample import Sample
@@ -110,11 +111,15 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
         help="Base directory for relative filepaths in database")
     p.add_argument("--local-mnt", help="Local mount point")
     p.add_argument("--remote-mnt", help="Remote mount point")
+    p.add_argument("--sqlite-db", help="Registry database file")
     args = p.parse_args(argv)
 
     # Use current dir for output
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
+
+    if args.sqlite_db:
+        db = CoreDb(args.sqlite_db)
 
     run_info = db._query_run(args.run_accession)
     if run_info is None:
@@ -127,7 +132,10 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
         run_fp = remount_filepath(run_fp, args.remote_mnt, args.local_mnt)
     if not os.path.exists(run_fp):
         raise FileNotFoundError("Run file {0} not found".format(run_fp))
-        
+
+    # Get the file set from the R1 file
+    fs = IlluminaFastqFileSet(run_fp)
+
     # Get the sample names and barcodes
     sample_barcodes = db.query_sample_barcodes(args.run_accession)
     samples = [Sample(name, bc) for name, bc in sample_barcodes]
@@ -135,8 +143,7 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
     # Make a new assigner with the sample list
     assigner = BarcodeAssigner(samples, revcomp=True)
 
-    # Make a FastqSequenceFile object
-    fs = IlluminaFastqFileSet(run_fp)
+    # Make a demultiplexible SequenceFile object
     seq_file = SequenceFile(*fs.existing_file_set())
 
     # Make a writer
