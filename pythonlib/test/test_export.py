@@ -58,7 +58,7 @@ class MockDb:
             "data_R1.fastq.gz", "Bob's run")
 
     def query_sample_barcodes(self, acc):
-        return [("SampleA", "AAATTT")]
+        return [("SampleA", "AAAGGG")]
 
 
 class ExportTests(unittest.TestCase):
@@ -70,8 +70,9 @@ class ExportTests(unittest.TestCase):
         shutil.rmtree(self.temp_input_dir)
         shutil.rmtree(self.temp_output_dir)
 
-    def test_main(self):
-        header = "@HWI-D00727:9:C6JHHANXX:8:1101:1361:2237 1:N:0:AAATTT"
+    def test_export_samples(self):
+        # CCCTTT is the reverse complement of AAAGGG
+        header = "@HWI-D00727:9:C6JHHANXX:8:1101:1361:2237 1:N:0:CCCTTT"
         seq_fwd = "CGTGCGATGCTAGCTAGCGATTGC"
         seq_rev = "CGATCGACTGCTACGATCGACTAC"
         qual = "#=<BBGGGGGGGGGGGGGGGGGGG"
