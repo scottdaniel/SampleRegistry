@@ -39,13 +39,13 @@ as comments.
 """
 
 
-def unregister_samples(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+def unregister_samples(argv=None, db=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(
         description="Remove samples for a sequencing run from the registry.")
     p.add_argument("run_accession", type=int, help="Run accession number")
     args = p.parse_args(argv)
 
-    registry = SampleRegistry(coredb)
+    registry = SampleRegistry(db)
     registry.check_run_accession(args.run_accession)
     samples_removed = registry.remove_samples(args.run_accession)
     out.write("Removed {0} samples: {1}".format(
@@ -61,7 +61,7 @@ def register_annotations():
 
 
 def register_sample_annotations(
-        argv=None, register_samples=False, coredb=REGISTRY_DATABASE,
+        argv=None, register_samples=False, db=REGISTRY_DATABASE,
         out=sys.stdout):
 
     if register_samples:
@@ -81,7 +81,7 @@ def register_sample_annotations(
     sample_table.look_up_nextera_barcodes()
     sample_table.validate()
 
-    registry = SampleRegistry(coredb)
+    registry = SampleRegistry(db)
     registry.check_run_accession(args.run_accession)
     if register_samples:
         registry.register_samples(args.run_accession, sample_table)
@@ -105,30 +105,30 @@ def parse_tsv_ncol(f, ncol):
 
 
 def register_sample_types(
-        argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+        argv=None, db=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(description=(
         "Update the list of standard sample types in the registry"))
     p.add_argument("file", type=argparse.FileType("r"))
     args = p.parse_args(argv)
 
     sample_types = list(parse_tsv_ncol(args.file, 3))
-    coredb.remove_standard_sample_types()
-    coredb.register_standard_sample_types(sample_types)
+    db.remove_standard_sample_types()
+    db.register_standard_sample_types(sample_types)
 
 
 def register_host_species(
-        argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+        argv=None, db=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(description=(
         "Update the list of standard host species in the registry"))
     p.add_argument("file", type=argparse.FileType("r"))
     args = p.parse_args(argv)
 
     host_species = list(parse_tsv_ncol(args.file, 3))
-    coredb.remove_standard_host_species()
-    coredb.register_standard_host_species(host_species)
+    db.remove_standard_host_species()
+    db.register_standard_host_species(host_species)
 
 
-def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+def register_illumina_file(argv=None, db=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(description=(
         "Add a new run to the registry from a gzipped Illumina FASTQ file"))
     p.add_argument("file")
@@ -136,12 +136,12 @@ def register_illumina_file(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     args = p.parse_args(argv)
 
     f = IlluminaFastq(gzip.open(args.file, "rt"))
-    acc = coredb.register_run(
+    acc = db.register_run(
         f.date, f.machine_type, "Nextera XT", f.lane, f.filepath, args.comment)
     out.write("Registered run {0} in the database\n".format(acc))
 
 
-def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
+def register_run(argv=None, db=REGISTRY_DATABASE, out=sys.stdout):
     p = argparse.ArgumentParser(
         description="Add a new run to the registry")
     p.add_argument("file", help="Resource filepath (not checked)")
@@ -153,7 +153,7 @@ def register_run(argv=None, coredb=REGISTRY_DATABASE, out=sys.stdout):
     p.add_argument("--lane", default="1", help="Lane number")
     args = p.parse_args(argv)
 
-    acc = coredb.register_run(
+    acc = db.register_run(
         args.date, args.type, "Nextera XT", args.lane, args.file, args.comment)
     out.write(u"Registered run %s in the database\n" % acc)
 
