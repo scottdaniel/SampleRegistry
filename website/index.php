@@ -134,6 +134,7 @@ function show_run() {
     return html('show_run_samples.html.php');
 }
 
+dispatch('^/runs/(\d+).json', 'export_run_as_json');
 function export_run_as_json() {
     $run_accession = params(0);
     $run = query_run($run_accession);
