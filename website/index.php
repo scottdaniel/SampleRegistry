@@ -134,23 +134,34 @@ function show_run() {
     return html('show_run_samples.html.php');
 }
 
-dispatch('^/runs/(\d+).json', 'export_run_as_json');
 function export_run_as_json() {
     $run_accession = params(0);
     $run = query_run($run_accession);
     if (!$run) {
         halt(NOT_FOUND, "Run $run_accession does not exist.");
     }
+    $run_data = $run->as_array();
+
     $samples = query_run_samples($run_accession);
-    $sample_metadata = query_multisample_annotations($samples);
-    $keyed_metadata = key_by_attribute(
-        $sample_metadata, "sample_accession");
-    $run_data = array(
-        "run" => $run,
-        "samples" => $samples,
-        "annotations" => $keyed_metadata,
+    $sample_data_keyed = array();
+    foreach ($samples as $sample) {
+        $sample_data_keyed[$sample->sample_accession] = $sample->as_array();
+    }
+
+    $annotations = query_multisample_annotations($samples);
+    foreach ($annotations as $ann) {
+        $sample_data_keyed[$ann->sample_accession][$ann->key] = $ann->val;
+    }
+
+    $sample_data = array();
+    foreach ($samples as $sample) {
+        $sample_data[] = $sample_data_keyed[$sample->sample_accession];
+    }
+    $output = array(
+        "run" => $run_data,
+        "samples" => $sample_data,
     );
-    return json($run_data, null);
+    return json($output, null);
 }
 
 dispatch('^/runs/(\d+).txt', 'export_samples_for_qiime');
