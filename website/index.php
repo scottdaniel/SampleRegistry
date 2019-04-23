@@ -134,6 +134,25 @@ function show_run() {
     return html('show_run_samples.html.php');
 }
 
+dispatch('^/runs/(\d+).json', 'export_run_as_json');
+function export_run_as_json() {
+    $run_accession = params(0);
+    $run = query_run($run_accession);
+    if (!$run) {
+        halt(NOT_FOUND, "Run $run_accession does not exist.");
+    }
+    $samples = query_run_samples($run_accession);
+    $sample_metadata = query_multisample_annotations($samples);
+    $keyed_metadata = key_by_attribute(
+        $sample_metadata, "sample_accession");
+    $run_data = array(
+        "run" => $run,
+        "samples" => $samples,
+        "annotations" => $keyed_metadata,
+    );
+    return json($run_data, null);
+}
+
 dispatch('^/runs/(\d+).txt', 'export_samples_for_qiime');
 function export_samples_for_qiime() {
     $run_accession = params(0);
