@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import unittest
 
-from sample_registry.db import CoreDb
+from sample_registry.db import RegistryDatabase
 from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
@@ -25,7 +25,7 @@ def temp_sample_file(samples):
 
 class RegisterScriptTests(unittest.TestCase):
     def setUp(self):
-        self.db = CoreDb(":memory:")
+        self.db = RegistryDatabase(":memory:")
         self.db.create_tables()
         self.run_args = [
             "abc",

@@ -1,10 +1,10 @@
 import unittest
 
-from sample_registry.db import CoreDb
+from sample_registry.db import RegistryDatabase
 
-class CoreDbTests(unittest.TestCase):
+class RegistryDatabaseTests(unittest.TestCase):
     def setUp(self):
-        self.db = CoreDb(":memory:")
+        self.db = RegistryDatabase(":memory:")
         self.db.create_tables()
         self.run = (
             u"2015-10-11", u"HiSeq", u"Nextera XT", 1,
@@ -90,7 +90,7 @@ class CoreDbTests(unittest.TestCase):
             (1, "HostSpecies", "b"),
             (2, "SubjectID", "c"),
             ]
-        obs = CoreDb._collect_standard_annotations(a)
+        obs = RegistryDatabase._collect_standard_annotations(a)
         self.assertEqual(obs, {1: ["a", None, "b"], 2: [None, "c", None]})
 
 

@@ -7,12 +7,12 @@ import re
 import sys
 import gzip
 
-from sample_registry.db import CoreDb
+from sample_registry.db import RegistryDatabase
 from sample_registry.mapping import SampleTable
 from sample_registry.illumina import IlluminaFastq
 
 
-REGISTRY_DATABASE = CoreDb("/var/local/sample_registry/core.db")
+REGISTRY_DATABASE = RegistryDatabase("/var/local/sample_registry/core.db")
 
 
 SAMPLES_DESC = """\

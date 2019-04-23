@@ -3,7 +3,7 @@ import gzip
 import os
 
 
-from .db import CoreDb
+from .db import RegistryDatabase
 from .register import REGISTRY_DATABASE
 from dnabclib.assigner import BarcodeAssigner
 from dnabclib.sample import Sample
@@ -119,7 +119,7 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
         os.mkdir(args.output_dir)
 
     if args.sqlite_db:
-        db = CoreDb(args.sqlite_db)
+        db = RegistryDatabase(args.sqlite_db)
 
     run_info = db._query_run(args.run_accession)
     if run_info is None:

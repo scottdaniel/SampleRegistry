@@ -3,7 +3,7 @@ import os.path
 import sqlite3
 
 
-class CoreDb(object):
+class RegistryDatabase(object):
     def __init__(self, database_fp):
         self.db = database_fp
         self.con = sqlite3.connect(self.db)
