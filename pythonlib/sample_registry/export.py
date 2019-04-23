@@ -114,31 +114,39 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
     p.add_argument("--sqlite-db", help="Registry database file")
     args = p.parse_args(argv)
 
-    # Use current dir for output
-    if not os.path.exists(args.output_dir):
-        os.mkdir(args.output_dir)
-
     if args.sqlite_db:
         db = RegistryDatabase(args.sqlite_db)
 
     run_fp = db.query_run_file(args.run_accession)
     if run_fp is None:
         raise ValueError("Run {0} not found.".format(args.run_accession))
+    sample_barcodes = db.query_sample_barcodes(args.run_accession)
+
+    demultiplex_from_registry(
+        run_fp, sample_barcodes, args.output_dir, args.base_dir,
+        args.local_mnt, args.remote_mnt)
+
+
+def demultiplex_from_registry(
+        r1_filepath, sample_barcodes, output_dir, base_dir,
+        local_mnt, remote_mnt):
+    # Do this first in case there is an error
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     # Get the absolute filepath to the R1 file
-    run_fp = absolute_filepath(run_fp, args.base_dir)
-    if args.local_mnt and args.remote_mnt:
-        run_fp = remount_filepath(run_fp, args.remote_mnt, args.local_mnt)
-    if not os.path.exists(run_fp):
+    r1_filepath = absolute_filepath(r1_filepath, base_dir)
+    if local_mnt and remote_mnt:
+        run_fp = remount_filepath(r1_filepath, remote_mnt, local_mnt)
+    if not os.path.exists(r1_filepath):
         raise FileNotFoundError("Run file {0} not found".format(run_fp))
-
     # Get the file set from the R1 file
-    fs = IlluminaFastqFileSet(run_fp)
+    fs = IlluminaFastqFileSet(r1_filepath)
 
-    sample_barcodes = db.query_sample_barcodes(args.run_accession)
+    # From here down, we are heavily reliant on classes from dnabc
+    # Consider wrapping this up in a function from dnabc
     samples = [Sample(name, bc) for name, bc in sample_barcodes]
-
     assigner = BarcodeAssigner(samples, revcomp=True)
-    writer = PairedFastqWriter(args.output_dir)
+    writer = PairedFastqWriter(output_dir)
     seq_file = SequenceFile(*fs.existing_file_set())
     seq_file.demultiplex(assigner, writer)
