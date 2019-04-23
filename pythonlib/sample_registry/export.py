@@ -136,16 +136,10 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
     # Get the file set from the R1 file
     fs = IlluminaFastqFileSet(run_fp)
 
-    # Get the sample names and barcodes
     sample_barcodes = db.query_sample_barcodes(args.run_accession)
     samples = [Sample(name, bc) for name, bc in sample_barcodes]
 
-    # Make a new assigner with the sample list
     assigner = BarcodeAssigner(samples, revcomp=True)
-
-    # Make a demultiplexible SequenceFile object
-    seq_file = SequenceFile(*fs.existing_file_set())
-
-    # Make a writer
     writer = PairedFastqWriter(args.output_dir)
+    seq_file = SequenceFile(*fs.existing_file_set())
     seq_file.demultiplex(assigner, writer)
