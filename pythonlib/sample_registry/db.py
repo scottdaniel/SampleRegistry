@@ -3,17 +3,15 @@ import os.path
 import sqlite3
 
 
-class CoreDb(object):
+class RegistryDatabase(object):
     def __init__(self, database_fp):
         self.db = database_fp
         self.con = sqlite3.connect(self.db)
 
     select_run_fp = "SELECT run_accession FROM runs WHERE data_uri = ?"
     
-    select_run_acc = (
-        "SELECT run_date, machine_type, machine_kit, "
-        "lane, data_uri, comment "
-        "FROM runs WHERE run_accession = ?"
+    select_run = (
+        "SELECT data_uri FROM runs WHERE run_accession = ?"
         )
 
     select_sample_bc = (
@@ -25,6 +23,11 @@ class CoreDb(object):
 
     select_samples = (
         "SELECT sample_accession FROM samples WHERE run_accession = ?"
+    )
+
+    select_sample_names_and_bc = (
+        "SELECT sample_name, barcode_sequence FROM samples WHERE "
+        "run_accession = ?"
     )
 
     delete_sample = (
@@ -167,10 +170,10 @@ class CoreDb(object):
 
         Returns the accession number of the new run.
         """
-        existing_run = self._query_run_file(fp)
-        if existing_run:
+        existing_run_acc = self._query_run_from_file(fp)
+        if existing_run_acc:
             raise ValueError(
-                "Run data already registered as %s" % existing_run[0])
+                "Run data already registered as %s" % existing_run_acc)
         cur = self.con.cursor()
         cur.execute(
             self.insert_run,
@@ -180,24 +183,30 @@ class CoreDb(object):
         cur.close()
         return accession
 
-    def _query_run_file(self, fp):
+    def _query_run_from_file(self, fp):
         cur = self.con.cursor()
         cur.execute(self.select_run_fp, (fp,))
         self.con.commit()
         res = cur.fetchone()
         cur.close()
-        return res
+        if res is not None:
+            return res[0]
+        else:
+            return None
 
     def query_run_exists(self, run_accession):
-        return self._query_run(run_accession) is not None
+        return self.query_run_file(run_accession) is not None
 
-    def _query_run(self, run_accession):
+    def query_run_file(self, run_accession):
         cur = self.con.cursor()
-        cur.execute(self.select_run_acc, (run_accession,))
+        cur.execute(self.select_run, (run_accession,))
         self.con.commit()
         res = cur.fetchone()
         cur.close()
-        return res
+        if res is not None:
+            return res[0]
+        else:
+            return None
 
     def register_samples(self, run_accession, sample_bcs):
         """Registers samples from tuples of SampleID, BarcodeSequence.
@@ -245,6 +254,15 @@ class CoreDb(object):
         res = cur.fetchall()
         cur.close()
         return [r[0] for r in res]
+
+    def query_sample_barcodes(self, run_accession):
+        """Find sample names and barcodes for a run."""
+        cur = self.con.cursor()
+        cur.execute(self.select_sample_names_and_bc, (run_accession, ))
+        self.con.commit()
+        res = cur.fetchall()
+        cur.close()
+        return list(res)
 
     def remove_samples(self, sample_accessions):
         """Removes samples by accession number."""

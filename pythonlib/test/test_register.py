@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import unittest
 
-from sample_registry.db import CoreDb
+from sample_registry.db import RegistryDatabase
 from sample_registry.mapping import SampleTable
 from sample_registry.register import (
     register_run, register_sample_annotations,
@@ -25,7 +25,7 @@ def temp_sample_file(samples):
 
 class RegisterScriptTests(unittest.TestCase):
     def setUp(self):
-        self.db = CoreDb(":memory:")
+        self.db = RegistryDatabase(":memory:")
         self.db.create_tables()
         self.run_args = [
             "abc",
@@ -41,7 +41,7 @@ class RegisterScriptTests(unittest.TestCase):
             "bb": "cd e29",
         }]
 
-    def test_rgister_run(self):
+    def test_register_run(self):
         out = io.StringIO()
         register_run(self.run_args, self.db, out)
 
@@ -52,9 +52,7 @@ class RegisterScriptTests(unittest.TestCase):
         )
 
         # Check that attributes are saved in the database
-        self.assertEqual(self.db._query_run(1), (
-            u'2008-09-21', u'Illumina-MiSeq', u'Nextera XT', 1,
-            u'abc', u'mdsnfa adsf'))
+        self.assertEqual(self.db.query_run_file(1), "abc")
 
     def test_register_illumina_file(self):
         tmp_dir = tempfile.mkdtemp()
@@ -66,7 +64,7 @@ class RegisterScriptTests(unittest.TestCase):
         os.makedirs(os.path.join(tmp_dir, fastq_dir))
         relative_fp = os.path.join(fastq_dir, fastq_name)
         absolute_fp = os.path.join(tmp_dir, relative_fp)
-        f = gzip.GzipFile(absolute_fp, "w")
+        f = gzip.open(absolute_fp, "wt")
         f.write("@M03543:21:C8LJ2ANXX:1:2209:1084:2044 1:N:0:NNNNNNNN+NNNNNNNN")
         f.close()
 
@@ -80,9 +78,7 @@ class RegisterScriptTests(unittest.TestCase):
             os.chdir(original_cwd)
             shutil.rmtree(tmp_dir)
 
-        self.assertEqual(self.db._query_run(1), (
-            u'2016-05-11', u'Illumina-MiSeq', u'Nextera XT', 1,
-            unicode(relative_fp), u'abcd efg'))
+        self.assertEqual(self.db.query_run_file(1), relative_fp)
 
     def test_register_samples(self):
         register_run(self.run_args, self.db)

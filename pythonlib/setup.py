@@ -4,7 +4,7 @@ from distutils.core import setup
 from glob import glob
 
 setup(
-    name='Sample Registry',
+    name='SampleRegistry',
     version='0.1',
     description='PennCHOP Microbiome Program Sample Registry',
     author='Kyle Bittinger',
@@ -19,6 +19,7 @@ setup(
         'register_annotations = sample_registry.register:register_annotations',
         'register_host_species = sample_registry.register:register_host_species',
         'register_sample_types = sample_registry.register:register_sample_types',
+        'export_samples = sample_registry.export:export_samples',
         ]},
     )
 

@@ -1,11 +1,10 @@
 import unittest
 
-from sample_registry.db import CoreDb
+from sample_registry.db import RegistryDatabase
 
-
-class CoreDbTests(unittest.TestCase):
+class RegistryDatabaseTests(unittest.TestCase):
     def setUp(self):
-        self.db = CoreDb(":memory:")
+        self.db = RegistryDatabase(":memory:")
         self.db.create_tables()
         self.run = (
             u"2015-10-11", u"HiSeq", u"Nextera XT", 1,
@@ -28,8 +27,8 @@ class CoreDbTests(unittest.TestCase):
     def test_register_run(self):        
         self.assertEqual(self.run_acc, 1)
         self.assertTrue(self.db.query_run_exists(self.run_acc))
-        obs_run = self.db._query_run(self.run_acc)
-        self.assertEqual(self.run, obs_run)
+        obs_fp = self.db.query_run_file(self.run_acc)
+        self.assertEqual("run_file.fastq", obs_fp)
         # Registering the run twice should raise an error
         self.assertRaises(ValueError, self.db.register_run, *self.run)
 
@@ -57,6 +56,10 @@ class CoreDbTests(unittest.TestCase):
         self.db.register_samples(1, self.sample_bcs)
         self.assertEqual(
             self.db.query_sample_accessions(1), [1, 2, 3])
+
+    def test_query_sample_barcodes(self):
+        self.db.register_samples(1, self.sample_bcs)
+        self.assertEqual(self.db.query_sample_barcodes(1), self.sample_bcs)
 
     def test_remove_samples(self):
         self.db.register_samples(1, self.sample_bcs)
@@ -87,7 +90,7 @@ class CoreDbTests(unittest.TestCase):
             (1, "HostSpecies", "b"),
             (2, "SubjectID", "c"),
             ]
-        obs = CoreDb._collect_standard_annotations(a)
+        obs = RegistryDatabase._collect_standard_annotations(a)
         self.assertEqual(obs, {1: ["a", None, "b"], 2: [None, "c", None]})
 
 
