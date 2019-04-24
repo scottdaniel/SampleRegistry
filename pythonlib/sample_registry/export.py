@@ -1,14 +1,11 @@
 import argparse
 import gzip
 import os
+import shlex
 
 
 from .db import RegistryDatabase
 from .register import REGISTRY_DATABASE
-from dnabclib.assigner import BarcodeAssigner
-from dnabclib.sample import Sample
-from dnabclib.seqfile import SequenceFile
-from dnabclib.writer import PairedFastqWriter
 
 
 def absolute_filepath(fp, base_dir="/"):
@@ -93,12 +90,12 @@ class IlluminaFastqFileSet(object):
         else:
             return open(fp)
 
-    def existing_file_set(self):
+    def existing_filepaths(self):
         fps = [
             self.r1_filepath, self.r2_filepath,
             self.i1_filepath, self.i2_filepath,
         ]
-        return [self.open(fp) if os.path.exists(fp) else None for fp in fps]
+        return [fp if os.path.exists(fp) else None for fp in fps]
 
 
 # The plan:
@@ -157,11 +154,40 @@ def demultiplex_from_registry(
         raise FileNotFoundError("Run file {0} not found".format(run_fp))
     # Get the file set from the R1 file
     fs = IlluminaFastqFileSet(r1_filepath)
+    r1_fp, r2_fp, i1_fp, i2_fp = fs.existing_filepaths()
 
-    # From here down, we are heavily reliant on classes from dnabc
-    # Consider wrapping this up in a function from dnabc
-    samples = [Sample(name, bc) for name, bc in sample_barcodes]
-    assigner = BarcodeAssigner(samples, revcomp=True)
-    writer = PairedFastqWriter(fastq_dir)
-    seq_file = SequenceFile(*fs.existing_file_set())
-    seq_file.demultiplex(assigner, writer)
+    barcode_fp = os.path.join(output_dir, "barcodes.txt")
+    with open(barcode_fp, "w") as f:
+        for name, bc in sample_barcodes:
+            f.write("{0}\t{1}\n".format(name, bc))
+
+    dnabc_script_fp = os.path.join(output_dir, "run_dnabc.sh")
+    with open(dnabc_script_fp, "w") as f:
+        f.write("#!/bin/bash\n")
+        cmd = dnabc_command(
+            r1_fp, r2_fp, i1_fp, i2_fp, barcode_fp, fastq_dir, revcomp=True)
+        f.write(cmd)
+        f.write("\n")
+    make_executable(dnabc_script_fp)
+
+def make_executable(path):
+    mode = os.stat(path).st_mode
+    mode |= (mode & 0o444) >> 2    # copy R bits to X
+    os.chmod(path, mode)
+
+def dnabc_command(
+        r1_fp, r2_fp, i1_fp, i2_fp, barcode_fp, output_dir, revcomp=True):
+    cmd_parts = [
+        "dnabc.py",
+        "--barcode-file", shlex.quote(barcode_fp),
+        "--forward-reads", shlex.quote(r1_fp),
+        "--reverse-reads", shlex.quote(r2_fp),
+    ]
+    if i1_fp is not None:
+        cmd_parts.extend(["--index-reads", shlex.quote("i1_fp")])
+        if i2_fp is not None:
+            cmd_parts.extend(["--reverse-index-reads", shlex.quote("i2_fp")])
+    cmd_parts.extend(["--output-dir", shlex.quote(output_dir)])
+    if revcomp:
+        cmd_parts.append("--revcomp")
+    return " ".join(cmd_parts)
