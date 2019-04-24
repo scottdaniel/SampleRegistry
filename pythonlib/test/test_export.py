@@ -90,11 +90,13 @@ class ExportTests(unittest.TestCase):
             self.temp_output_dir]
         export_samples(args, db=MockDb())
 
+        output_fastq_dir = os.path.join(
+            self.temp_output_dir, "per_sample_fastq")
         self.assertEqual(
-            set(os.listdir(self.temp_output_dir)),
+            set(os.listdir(output_fastq_dir)),
             set(("SampleA_R1.fastq", "SampleA_R2.fastq")))
 
-        with open(os.path.join(self.temp_output_dir, "SampleA_R1.fastq")) as f:
+        with open(os.path.join(output_fastq_dir, "SampleA_R1.fastq")) as f:
             f1 = next(f)
             self.assertEqual(f1, header + "\n")
             f2 = next(f)

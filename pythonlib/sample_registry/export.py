@@ -101,6 +101,18 @@ class IlluminaFastqFileSet(object):
         return [self.open(fp) if os.path.exists(fp) else None for fp in fps]
 
 
+# The plan:
+#  1. Use JSON output from registry website
+#     to build table of samples and grab file.
+#     This gets rid of --sqlite-db and the registry
+#     stuff in python.
+#  2. Use only relative filepaths in the registry,
+#     so we can get rid of the --local-mnt and --remote-mnt
+#     arguments
+#  3. Don't do the demultiplexing here; write a script to
+#     run dnabc.py at the destination.
+#  Now we are completely decoupled from the registry and dnabc.py
+#  and this stuff gets moved into a new repo.
 def export_samples(argv=None, db=REGISTRY_DATABASE):
     p = argparse.ArgumentParser()
     p.add_argument(
@@ -133,6 +145,9 @@ def demultiplex_from_registry(
     # Do this first in case there is an error
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+    fastq_dir = os.path.join(output_dir, "per_sample_fastq")
+    if not os.path.exists(fastq_dir):
+        os.mkdir(fastq_dir)
 
     # Get the absolute filepath to the R1 file
     r1_filepath = absolute_filepath(r1_filepath, base_dir)
@@ -147,6 +162,6 @@ def demultiplex_from_registry(
     # Consider wrapping this up in a function from dnabc
     samples = [Sample(name, bc) for name, bc in sample_barcodes]
     assigner = BarcodeAssigner(samples, revcomp=True)
-    writer = PairedFastqWriter(output_dir)
+    writer = PairedFastqWriter(fastq_dir)
     seq_file = SequenceFile(*fs.existing_file_set())
     seq_file.demultiplex(assigner, writer)
