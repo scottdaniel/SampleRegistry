@@ -103,23 +103,18 @@ class IlluminaFastqFileSet(object):
 #     to build table of samples and grab file.
 #     This gets rid of --sqlite-db and the registry
 #     stuff in python.
-#  2. Use only relative filepaths in the registry,
-#     so we can get rid of the --local-mnt and --remote-mnt
-#     arguments
-#  3. Don't do the demultiplexing here; write a script to
-#     run dnabc.py at the destination.
-#  Now we are completely decoupled from the registry and dnabc.py
+#  Now we are completely decoupled from the registry
 #  and this stuff gets moved into a new repo.
+CHOP_DATA_DIR = "/mnt/isilon/microbiome/"
+
 def export_samples(argv=None, db=REGISTRY_DATABASE):
     p = argparse.ArgumentParser()
     p.add_argument(
         "run_accession", type=int, help="Run accession number")
     p.add_argument("--output-dir", default="fastq_data",
         help="Output directory (default: %(default)s)")
-    p.add_argument("--base-dir", default="/mnt/isilon/microbiome/",
-        help="Base directory for relative filepaths in database")
-    p.add_argument("--local-mnt", help="Local mount point")
-    p.add_argument("--remote-mnt", help="Remote mount point")
+    p.add_argument("--base-dir", default=CHOP_DATA_DIR,
+        help="Base directory for data files")
     p.add_argument("--sqlite-db", help="Registry database file")
     args = p.parse_args(argv)
 
@@ -131,37 +126,30 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
         raise ValueError("Run {0} not found.".format(args.run_accession))
     sample_barcodes = db.query_sample_barcodes(args.run_accession)
 
-    demultiplex_from_registry(
-        run_fp, sample_barcodes, args.output_dir, args.base_dir,
-        args.local_mnt, args.remote_mnt)
+    # Fix absolute filepaths in the database
+    relative_run_fp = remove_prefix(run_fp, CHOP_DATA_DIR)
+    absolute_run_fp = os.path.join(args.base_dir, relative_run_fp)
 
+    # Error out now if we can't find the run file
+    if not os.path.exists(absolute_run_fp):
+        msg = "Run file {0} not found".format(absolute_run_fp)
+        raise FileNotFoundError(msg)
 
-def demultiplex_from_registry(
-        r1_filepath, sample_barcodes, output_dir, base_dir,
-        local_mnt, remote_mnt):
-    # Do this first in case there is an error
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-    fastq_dir = os.path.join(output_dir, "per_sample_fastq")
-    if not os.path.exists(fastq_dir):
-        os.mkdir(fastq_dir)
+    # Next, error out if we can't create the output directory
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
 
-    # Get the absolute filepath to the R1 file
-    r1_filepath = absolute_filepath(r1_filepath, base_dir)
-    if local_mnt and remote_mnt:
-        run_fp = remount_filepath(r1_filepath, remote_mnt, local_mnt)
-    if not os.path.exists(r1_filepath):
-        raise FileNotFoundError("Run file {0} not found".format(run_fp))
     # Get the file set from the R1 file
-    fs = IlluminaFastqFileSet(r1_filepath)
+    fs = IlluminaFastqFileSet(absolute_run_fp)
     r1_fp, r2_fp, i1_fp, i2_fp = fs.existing_filepaths()
 
-    barcode_fp = os.path.join(output_dir, "barcodes.txt")
+    barcode_fp = os.path.join(args.output_dir, "barcodes.txt")
     with open(barcode_fp, "w") as f:
         for name, bc in sample_barcodes:
             f.write("{0}\t{1}\n".format(name, bc))
 
-    dnabc_script_fp = os.path.join(output_dir, "run_dnabc.sh")
+    dnabc_script_fp = os.path.join(args.output_dir, "run_dnabc.sh")
+    fastq_dir = os.path.join(args.output_dir, "per_sample_fastq")
     with open(dnabc_script_fp, "w") as f:
         f.write("#!/bin/bash\n")
         cmd = dnabc_command(
@@ -170,13 +158,21 @@ def demultiplex_from_registry(
         f.write("\n")
     make_executable(dnabc_script_fp)
 
+
+# From https://stackoverflow.com/a/16891427
+def remove_prefix(s, prefix):
+    return s[len(prefix):] if s.startswith(prefix) else s
+
+
+# From https://stackoverflow.com/a/30463972
 def make_executable(path):
     mode = os.stat(path).st_mode
     mode |= (mode & 0o444) >> 2    # copy R bits to X
     os.chmod(path, mode)
 
+
 def dnabc_command(
-        r1_fp, r2_fp, i1_fp, i2_fp, barcode_fp, output_dir, revcomp=True):
+        r1_fp, r2_fp, i1_fp, i2_fp, barcode_fp, fastq_dir, revcomp=True):
     cmd_parts = [
         "dnabc.py",
         "--barcode-file", shlex.quote(barcode_fp),
@@ -187,7 +183,7 @@ def dnabc_command(
         cmd_parts.extend(["--index-reads", shlex.quote("i1_fp")])
         if i2_fp is not None:
             cmd_parts.extend(["--reverse-index-reads", shlex.quote("i2_fp")])
-    cmd_parts.extend(["--output-dir", shlex.quote(output_dir)])
+    cmd_parts.extend(["--output-dir", shlex.quote(fastq_dir)])
     if revcomp:
         cmd_parts.append("--revcomp")
     return " ".join(cmd_parts)
