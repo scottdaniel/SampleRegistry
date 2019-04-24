@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from sample_registry.export import (
-    IlluminaFastqFileSet, absolute_filepath, remount_filepath, export_samples,
+    IlluminaFastqFileSet, export_samples,
 )
 
 class IlluminaRunFileTests(unittest.TestCase):
@@ -28,37 +28,6 @@ class IlluminaRunFileTests(unittest.TestCase):
             os.path.join(fastq_dir, "Undetermined_S0_L001_I2_001.fastq.gz"))
 
 
-class FilePathTests(unittest.TestCase):
-    def test_absolute_filepath(self):
-        self.assertEqual(absolute_filepath("/hello/there"), "/hello/there")
-
-    def test_default_base_dir(self):
-        self.assertEqual(absolute_filepath("hello/there"), "/hello/there")
-
-    def test_base_dir_used_for_relative_fp(self):
-        self.assertEqual(absolute_filepath("a/b.c", base_dir="/d/e"), "/d/e/a/b.c")
-
-    def test_base_dir_not_used_for_absolute_fp(self):
-        self.assertEqual(absolute_filepath("/a/b.c", base_dir="/d/e"), "/a/b.c")
-
-    def test_local_mount(self):
-        self.assertEqual(
-            remount_filepath("/a/b/c/d.e", remote_mnt="/a/b", local_mnt="/f/g"),
-            "/f/g/c/d.e")
-
-    def test_invalid_mount_point(self):
-        self.assertRaises(
-            ValueError, remount_filepath, "/a/b/c.d",
-            remote_mnt="/e/f", local_mnt="/g/h")
-
-class MockDb:
-    def query_run_file(self, acc):
-        return "data_R1.fastq.gz"
-
-    def query_sample_barcodes(self, acc):
-        return [("SampleA", "AAAGGG")]
-
-
 class ExportTests(unittest.TestCase):
     def setUp(self):
         self.temp_input_dir = tempfile.mkdtemp()
@@ -69,6 +38,12 @@ class ExportTests(unittest.TestCase):
         shutil.rmtree(self.temp_output_dir)
 
     def test_export_samples(self):
+        run_info = {
+            "run": {"data_uri": "data_R1.fastq.gz"},
+            "samples": [
+                {"sample_name": "SampleA", "barcode_sequence": "AAAGGG"}]
+        }
+
         # CCCTTT is the reverse complement of AAAGGG
         header = "@HWI-D00727:9:C6JHHANXX:8:1101:1361:2237 1:N:0:CCCTTT"
         seq_fwd = "CGTGCGATGCTAGCTAGCGATTGC"
@@ -88,7 +63,7 @@ class ExportTests(unittest.TestCase):
         args = [
             "1", "--base-dir", self.temp_input_dir, "--output-dir",
             self.temp_output_dir]
-        export_samples(args, db=MockDb())
+        export_samples(args, run_info)
 
         # Ensure barcodes file written
         with open(os.path.join(self.temp_output_dir, "barcodes.txt")) as f:

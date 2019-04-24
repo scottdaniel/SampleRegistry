@@ -1,30 +1,8 @@
 import argparse
-import gzip
 import os
 import shlex
 
-
-from .db import RegistryDatabase
-from .register import REGISTRY_DATABASE
-
-
-def absolute_filepath(fp, base_dir="/"):
-    if not os.path.isabs(fp):
-        fp = os.path.join(base_dir, fp)
-    return fp
-
-
-def remount_filepath(fp, remote_mnt, local_mnt):
-    fp = os.path.normpath(fp)
-    remote_mnt = os.path.normpath(remote_mnt)
-    if not fp.startswith(remote_mnt):
-        msg = "File {0} not located under remote mount point {1}"
-        raise ValueError(msg.format(fp, remote_mnt))
-    # Remove the remote mount point
-    rel_fp = os.path.relpath(fp, remote_mnt)
-    # Prepend the local mount point
-    local_fp = os.path.join(local_mnt, rel_fp)
-    return local_fp
+import requests
 
 
 class IlluminaFastqFileSet(object):
@@ -44,10 +22,6 @@ class IlluminaFastqFileSet(object):
                 return ext
         raise ValueError("File extension for {0} not in {1}".format(
             self.r1_filepath, self.allowed_file_extensions))
-
-    @property
-    def is_gzip(self):
-        return self.r1_filepath.endswith(".gz")
 
     @property
     def r1_base_filename(self):
@@ -84,12 +58,6 @@ class IlluminaFastqFileSet(object):
     def i2_filepath(self):
         return self._illumina_fp(self.i2_code)
 
-    def open(self, fp):
-        if self.is_gzip:
-            return gzip.open(fp, mode="rt")
-        else:
-            return open(fp)
-
     def existing_filepaths(self):
         fps = [
             self.r1_filepath, self.r2_filepath,
@@ -98,16 +66,9 @@ class IlluminaFastqFileSet(object):
         return [fp if os.path.exists(fp) else None for fp in fps]
 
 
-# The plan:
-#  1. Use JSON output from registry website
-#     to build table of samples and grab file.
-#     This gets rid of --sqlite-db and the registry
-#     stuff in python.
-#  Now we are completely decoupled from the registry
-#  and this stuff gets moved into a new repo.
 CHOP_DATA_DIR = "/mnt/isilon/microbiome/"
-
-def export_samples(argv=None, db=REGISTRY_DATABASE):
+CHOP_REGISTRY_URL = "http://reslnmbiomea01.research.chop.edu/registry/"
+def export_samples(argv=None, run_info=None):
     p = argparse.ArgumentParser()
     p.add_argument(
         "run_accession", type=int, help="Run accession number")
@@ -115,16 +76,20 @@ def export_samples(argv=None, db=REGISTRY_DATABASE):
         help="Output directory (default: %(default)s)")
     p.add_argument("--base-dir", default=CHOP_DATA_DIR,
         help="Base directory for data files")
-    p.add_argument("--sqlite-db", help="Registry database file")
+    p.add_argument("--registry-url", default=CHOP_REGISTRY_URL,
+        help="Registry URL")
     args = p.parse_args(argv)
 
-    if args.sqlite_db:
-        db = RegistryDatabase(args.sqlite_db)
+    if run_info is None:
+        run_json_url = "{0}runs/{1}.json".format(
+            args.registry_url, args.run_accession)
+        r = requests.get(run_json_url)
+        run_info = r.json()
 
-    run_fp = db.query_run_file(args.run_accession)
-    if run_fp is None:
-        raise ValueError("Run {0} not found.".format(args.run_accession))
-    sample_barcodes = db.query_sample_barcodes(args.run_accession)
+    run_fp = run_info["run"]["data_uri"]
+    samples = run_info["samples"]
+    sample_barcodes = [
+        (s["sample_name"], s["barcode_sequence"]) for s in samples]
 
     # Fix absolute filepaths in the database
     relative_run_fp = remove_prefix(run_fp, CHOP_DATA_DIR)
