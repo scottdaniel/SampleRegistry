@@ -1,18 +1,104 @@
 sample_type	host_associated	description
-Feces	1	Human and animal fecal material.
-Rectal swab	1	We have observed that results are sensitive to exact collection method employed, please include notes in publication.
-Ostomy fluid	1	
-SHIME ascending	0	First compartment of SHIME apparatus.
-SHIME transverse	0	Second compartment of SHIME apparatus.
-SHIME descending	0	Third comartment of SHIME apparatus.
-Tongue swab	1	
-Cheek swab	1	
-Oropharyngeal swab	1	
-Nasopharyngeal swab	1	
-Esophageal biopsy	1	
+Air swab	0	
+Amnoitic fluid	1	
+Bacterial strain	0	
 BAL	1	
-PCR water	0	
-Sterile swab	0	Swab taken out of packaging in sequencing lab immediately before extraction.
+BAL fluid	1	
+Bedding	0	
+Biopsy	1	
+Bioreactor	0	
+Blank swab	0	
+Blood	1	
+Breast milk	1	
+Breast swab	1	
+Bronchoscope post-wash	1	
+Bronchoscope pre-wash	1	
+Bronchoscope tip	1	
+Buffer	0	
+Cecum	1	
+Cell lysate	1	
+Cervical swab	1	
+Cheek swab	1	
+Crop	1	
+Cultured cells	0	
+Dental plaque	1	
+Distal small bowel	1	
+Duodenum	1	
+Dust	0	
+Elution buffer	0	
+Empty well	0	
+Endometrial swab	1	
+Environmental blank	0	
+Environmental swab	0	
+Esophageal biopsy	1	
+Esophagus	1	
+Fecal inoculum	1	
+Feces	1	Human and animal fecal material.
+Feed	0	
+Fistula	1	
+Fistula swab	1	
+Fly food	0	
+Fruit fly	1	
+Ileal chyme	1	
+Ileal swab	1	
+Ileostomy	1	
+In vivo cells	0	
+Kveim reagent	0	
 Lab water	0	
+Lumenal contents cecum	1	
+Lumenal contents colon	1	
+Macular Retina	1	
+Meconium	1	
+Medium	0	
+Microbial culture	0	
+Mock community	0	
 Mock DNA	0	
+Mouse chow	0	
+Mucosa cecum	1	
+Mucosa colon	1	
+Mucosa small bowel	1	
+Mucosal contents colon	1	
+Nasal swab	1	
+Nasopharngeal swab	1	
+Nasopharyngeal swab	1	
+Oral swab	1	
+Oral wash	1	
+Oropharyngeal swab	1	
+Oropharynx	1	
+Ostomy fluid	1	
+Ostomy swab	1	
+Pancreatic fluid	1	
+PCR water	0	
+Peripheral retina	1	
+Placenta	1	
+Plaque biofilms	1	
+Plasma	1	
+Proximal small bowel	1	
+Rectal biopsy	1	
+Rectal swab	1	"We have observed that results are sensitive to exact collection method employed, please include notes in publication."
+Saline	0	
+Saliva	1	
+Sediment	0	
+Serum	1	
+SHIME ascending	0	First compartment of SHIME apparatus.
+SHIME descending	0	Third comartment of SHIME apparatus.
+SHIME transverse	0	Second compartment of SHIME apparatus.
+Skin swab	1	
+Small intestine	1	
+Soil bottom eggs	1	
+Spleen	1	
+Sputum	1	
+Sputum culture	1	
+Sterile swab	0	Swab taken out of packaging in sequencing lab immediately before extraction.
+Surface swab	0	
+Terminal ileum	1	
+Tongue swab	1	
+Tonsil	1	
+Tracheal aspirate	1	
+Tracheal control	1	
+Urethral swab	1	
+Urine	1	
+Vaginal Swab	1	
+Water	0	
+Weighing paper	0	
 Whole gut	1	From dissection.
